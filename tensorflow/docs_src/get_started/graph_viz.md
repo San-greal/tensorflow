@@ -5,11 +5,11 @@ TensorFlow 的计算图功能强大但却复杂。而图表可视化功能可以
 ![Visualization of a TensorFlow graph](https://www.tensorflow.org/images/graph_vis_animation.gif "Visualization of a TensorFlow graph")
 *Tensorflow 图形可视化*
 
-要查看您自己的图形，请运行 TensorBoard 并将其指向工作的日志目录，单击顶部窗格上的图形选项卡，然后使用左上角的菜单选择相关的运行。如果想获得有关于如何运行TensorBoard并且确保记录了所有必要信息的更多信息，请参阅@ {$ summaries_and_tensorboard $ TensorBoard：可视化学习}。
+要查看您自己的图形，请运行 TensorBoard 并将其指向工作的日志目录，单击顶部窗格上的图形选项卡，然后使用左上角的菜单选择相关的运行。如果想获得有关于如何运行 TensorBoard 并且确保记录了所有必要信息的更多信息，请参阅@ {$ summaries_and_tensorboard $ TensorBoard：可视化学习}。
 
 ## 命名范围和节点
 
-典型的 TensorFlow 图可能有成千上万的节点——太多了，很难一次看到，甚至无法使用标准图形工具进行布局。 为方便起见，变量名可以作用于域，可视化使用这些信息来定义图中节点上的层次结构。默认情况下，只显示该层次结构的顶部。以下是在一个在 `hidden` 名字域下使用 @{tf.name_scope} 名称的范围定义三个操作的示例 ：
+典型的 TensorFlow 图可能有成千上万的节点——太多了，很难一次看到，甚至无法使用标准图形工具进行布局。为方便起见，变量名可以作用于域，可视化使用这些信息来定义图中节点上的层次结构。默认情况下，只显示该层次结构的顶部。以下是在一个在 `hidden` 名字域下使用 @{tf.name_scope} 名称的范围定义三个操作的示例 ：
 
 ```python
 import tensorflow as tf
@@ -20,13 +20,13 @@ with tf.name_scope('hidden') as scope:
   b = tf.Variable(tf.zeros([1]), name='biases')
 ```
 
-这导致了以下三个op的名称：
+这导致了以下三个 op 的名称：
 
 * `hidden/alpha`
 * `hidden/weights`
 * `hidden/biases`
 
-在默认情况下，可视化将把所有三个op都折叠成标记为`hidden`的节点。至于额外的细节是不会丢失的。您可以双击，或者点击右上角橙色`+`号展开节点，然后你便会看到三个子节点`alpha`，`weights`和`biases`。
+在默认情况下，可视化将把所有三个 op 都折叠成标记为`hidden`的节点。至于额外的细节是不会丢失的。您可以双击，或者点击右上角橙色`+`号展开节点，然后你便会看到三个子节点`alpha`，`weights`和`biases`。
 
 以下是一个更复杂的节点在其初始状态和扩展状态的真实例子。
 
@@ -170,7 +170,7 @@ TensorBoard提供了几种方法来改变图形的视觉布局。这不会改变
 
 ## 张量的形状信息
 
-当序列化`GraphDef`包括张量的形状时，图形可视化工具用张量维度标注边缘，边缘厚度反映总张量的大小。在`GraphDef`的传递中包含张量形状的实际图形对象（如在 `sess.graph`）到`FileWriter`序列化图形的时候。下面的图片就显示了具有张量形状信息的CIFAR-10模型：
+当序列化 `GraphDef` 包括张量的形状时，图形可视化工具用张量维度标注边缘，边缘厚度反映总张量的大小。在 `GraphDef` 的传递中包含张量形状的实际图形对象（如在 `sess.graph` ）到 `FileWriter` 序列化图形的时候。下面的图片就显示了具有张量形状信息的CIFAR-10模型：
 <table width="100%;">
   <tr>
 
@@ -242,4 +242,4 @@ TensorBoard提供了几种方法来改变图形的视觉布局。这不会改变
       <img src="https://www.tensorflow.org/images/run_metadata_infocard.png" alt="Run metadata info card" title="Run metadata info card" />
     </td>
   </tr>
-</table>
+</table> 
