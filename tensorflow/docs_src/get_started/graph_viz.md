@@ -5,7 +5,7 @@ TensorFlow 的计算图功能强大但却复杂。而图表可视化功能可以
 ![Visualization of a TensorFlow graph](https://www.tensorflow.org/images/graph_vis_animation.gif "Visualization of a TensorFlow graph")
 *Tensorflow 图形可视化*
 
-要查看您自己的图形，请运行 TensorBoard 并将其指向工作的日志目录，单击顶部窗格上的图形选项卡，然后使用左上角的菜单选择相关的运行。如果想获得有关于如何运行 TensorBoard 并且确保记录了所有必要信息的更多信息，请参阅@ {$ summaries_and_tensorboard $ TensorBoard：可视化学习}。
+要查看您自己的图形，请运行 TensorBoard 并将其指向工作的日志目录，单击顶部窗格上的图形选项卡，然后使用左上角的菜单选择相关的运行。如果想获得有关于如何运行 TensorBoard 并且确保记录了所有必要信息的更多信息，请参阅 @{$summaries_and_tensorboard$TensorBoard: Visualizing Learning}。
 
 ## 命名范围和节点
 
