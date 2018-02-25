@@ -38,38 +38,30 @@ output[i0, ..., iN, j0, ..., jM] = operand[j0, ..., jM]
 | 参数     | 类型                     | 语义                        |
 | ------------- | ------------------------ | -------------------------------- |
 | `computation` | `Computation`            | 类型为 `T_0, T_1, ..., T_N ->S` 的计算，它有 N 个任意类型的参数  |
-| `args`        | sequence of N            | 任意类型的 N 个 参数 |
-:               : `ComputationDataHandle`s :                                  :
+| `args`        | N 个 `ComputationDataHandle` 的序列            | 任意类型的 N 个 参数 |
 
 参数 `args` 的数目和类型必须与计算 `computation` 相匹配。当然，没有参数 `args` 也是允许的。
 
-## Clamp
+## 钳制（Clamp）
 
-See also
-[`ComputationBuilder::Clamp`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::Clamp`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
-Clamps an operand to within the range between a minimum and maximum value.
+将一个操作数钳制到一个区间中，即在一个最小值和一个最大值之间。
 
 <b> `Clamp(computation, args...)` </b>
 
-| Arguments     | Type                    | Semantics                        |
+| 参数     | 类型                    | 语义                        |
 | ------------- | ----------------------- | -------------------------------- |
-| `computation` | `Computation`           | computation of type `T_0, T_1,   |
-:               :                         : ..., T_N -> S` with N parameters :
-:               :                         : of arbitrary type                :
-| `operand`     | `ComputationDataHandle` | array of type T                  |
-| `min`         | `ComputationDataHandle` | array of type T                  |
-| `max`         | `ComputationDataHandle` | array of type T                  |
+| `computation` | `Computation`           | 类型为 `T_0, T_1,..., T_N -> S` 的计算，它有 N 个任意类型的参数 |
+| `operand`     | `ComputationDataHandle` | 类型为 T 的数组 |
+| `min`         | `ComputationDataHandle` | 类型为 T 的数组 |
+| `max`         | `ComputationDataHandle` | 类型为 T 的数组 |
 
-Given an operand and minimum and maximum values, returns the operand if it is in
-the range between the minimum and maximum, else returns the minimum value if the
-operand is below this range or the maximum value if the operand is above this
-range.  That is, `clamp(x, a, b) =  max(min(x, a), b)`.
+输入是一个操作数和最大最小值，如果操作数位于最大最小值之间，则返回操作数，如果操作数小于最小值，则返回最小值，如果操作数大于最大值，则返回最大值。即 `clamp(x, a, b) =  max(min(x, a), b)`。
 
-All three arrays must be the same shape. Alternately, as a restricted form of
-[broadcasting](broadcasting.md), `min` and/or `max` can be a scalar of type `T`.
+输入的三个数组的维度形状必须是一样的。不过，也可以采用一种最严格的[广播](broadcasting.md)形式，即 `min` 和/或 `max` 可以是类型为 `T` 的一个标量。
 
-Example with scalar `min` and `max`:
+`min` 和 `max` 为标量的示例如下：
 
 ```
 let operand: s32[3] = {-1, 5, 9};
@@ -79,36 +71,22 @@ let max: s32 = 6;
 Clamp(operand, min, max) = s32[3]{0, 5, 6};
 ```
 
-## Collapse
+## 折叠（Collapse）
 
-See also
-[`ComputationBuilder::Collapse`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)
-and the @{tf.reshape} operation.
+另请参阅 [`ComputationBuilder::Collapse`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h) 和 @{tf.reshape} 操作。
 
-Collapses dimensions of an array into one dimension.
+将一个数组的多个维度折叠为一个维度。
 
 <b> `Collapse(operand, dimensions)` </b>
 
-| Arguments    | Type                    | Semantics                           |
+| 参数    | 类型                    | 语义                           |
 | ------------ | ----------------------- | ----------------------------------- |
-| `operand`    | `ComputationDataHandle` | array of type T                     |
-| `dimensions` | `int64` vector          | in-order, consecutive subset of T's |
-:              :                         : dimensions.                         :
+| `operand`    | `ComputationDataHandle` | 类型为 T 的数组   |
+| `dimensions` | `int64` 矢量          | T 的维度形状的依次连续子集 |
 
-Collapse replaces the given subset of the operand's dimensions by a single
-dimension. The input arguments are an arbitrary array of type T and a
-compile-time-constant vector of dimension indices. The dimension indices must be
-an in-order (low to high dimension numbers), consecutive subset of T's
-dimensions. Thus, {0, 1, 2}, {0, 1}, or {1, 2} are all valid dimension sets, but
-{1, 0} or {0, 2} are not. They are replaced by a single new dimension, in the
-same position in the dimension sequence as those they replace, with the new
-dimension size equal to the product of original dimension sizes. The lowest
-dimension number in `dimensions` is the slowest varying dimension (most major)
-in the loop nest which collapses these dimension, and the highest dimension
-number is fastest varying (most minor). See the @{tf.reshape} operator
-if more general collapse ordering is needed.
+折叠操作将操作数的指定的维度子集折叠为一个维度。输入参数为类型 T 的任意数组，和一个编译时为常数的维度指标。维度指标必须是依次排列的，即由低维到高维，且为 T 的维度形状的连续子集。因而，{0, 1, 2}，{0, 1}，或 {1, 2} 都是合规的维度子集，而 {1, 0} 和 {0, 2} 则不是。维度子集所表示的那部分维度会在同样的位置被替换一个新的维度，大小为被替换维度形状大小的乘积。`dimensions` 中的最低维度为折叠这些维度的循环中变化最慢的维度（主序），而最高维度为变化最快的那个维度（次序）。如果想了解更多的一般性的折叠次序问题，请参见 @{tf.reshape} 操作。
 
-For example, let v be an array of 24 elements:
+比如，令 v 为包含 24 个元素的数组：
 
 ```
 let v = f32[4x2x3] {{{10, 11, 12},  {15, 16, 17}},
