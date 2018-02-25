@@ -1,65 +1,49 @@
-# Operation Semantics
+# 操作语义
 
-The following describes the semantics of operations defined in the
-[`ComputationBuilder`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)
-interface. Typically, these operations map one-to-one to operations defined in
-the RPC interface in
-[`xla_data.proto`](https://www.tensorflow.org/code/tensorflow/compiler/xla/xla_data.proto).
+本文档描述了操作的语义，即 [`ComputationBuilder`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h) 接口中所定义的那些操作的语义。通常来说，这些操作与 [`xla_data.proto`](https://www.tensorflow.org/code/tensorflow/compiler/xla/xla_data.proto) 中的 RPC 接口所定义的那些操作是一一对应的。
 
-A note on nomenclature: the generalized data type XLA deals with is an
-N-dimensional array holding elements of some uniform type (such as 32-bit
-float). Throughout the documentation, *array* is used to denote an
-arbitrary-dimensional array. For convenience, special cases have more specific
-and familiar names; for example a *vector* is a 1-dimensional array and a
-*matrix* is a 2-dimensional array.
+关于术语：XLA 通常所处理的数据类型为元素类型一致的 N-维数组（比如元素全是 32 比特浮点类型）。在本文档中，**数组** 一词用于表示任意维度的数组。为方便起见，那些特例则使用人们约定俗成的更具体的名称；比如，1维数组称为**向量**，2维数组称为**矩阵**。
 
-## Broadcast
+## 广播（Broadcast）
 
-See also
-[`ComputationBuilder::Broadcast`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::Broadcast`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
-Adds dimensions to an array by duplicating the data in the array.
+通过在数组中复制数据来增加其维度。
 
-<b> `Broadcast(operand, broadcast_sizes)` </b>
+<b> `广播(operand, broadcast_sizes)` </b>
 
-Arguments         | Type                    | Semantics
+参数         | 类型                    | 语义
 ----------------- | ----------------------- | -------------------------------
-`operand`         | `ComputationDataHandle` | The array to duplicate
-`broadcast_sizes` | `ArraySlice<int64>`     | The sizes of the new dimensions
+`operand`         | `ComputationDataHandle` | 待复制的数组
+`broadcast_sizes` | `ArraySlice<int64>`     | 新维度的形状大小
 
-The new dimensions are inserted on the left, i.e. if `broadcast_sizes` has
-values `{a0, ..., aN}` and the operand shape has dimensions `{b0, ..., bM}` then
-the shape of the output has dimensions `{a0, ..., aN, b0, ..., bM}`.
+新的维度被插入在操作数（operand）的左侧，即，若 `broadcast_sizes` 的值为 `{a0, ..., aN}`，而操作数（operand）的维度形状为 `{b0, ..., bM}`，则广播后输出的维度形状为 `{a0, ..., aN, b0, ..., bM}`。
 
-The new dimensions index into copies of the operand, i.e.
+新的维度指标被插入到操作数（operand）副本中，即
 
 ```
 output[i0, ..., iN, j0, ..., jM] = operand[j0, ..., jM]
 ```
 
-For example, if `operand` is a scalar `f32` with value `2.0f`, and
-`broadcast_sizes` is `{2, 3}`, then the result will be an array with shape
-`f32[2, 3]` and all the values in the result will be `2.0f`.
+比如，若 `operand` 为一个值为 `2.0f` 的标量，而 `broadcast_sizes` 为 `{2, 3}`，则结果为形状为 `f32[2, 3]` 的一个数组，且它的所有元素的值都为 `2.0f`。
 
-## Call
+## 调用（Call）
 
-See also
-[`ComputationBuilder::Call`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::Call`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
-Invokes a computation with the given arguments.
+给定参数情况下，会触发计算。
 
 <b> `Call(computation, args...)` </b>
 
-| Arguments     | Type                     | Semantics                        |
+| 参数     | 类型                     | 语义                        |
 | ------------- | ------------------------ | -------------------------------- |
-| `computation` | `Computation`            | computation of type `T_0, T_1,   |
-:               :                          : ..., T_N -> S` with N parameters :
-:               :                          : of arbitrary type                :
-| `args`        | sequence of N            | N arguments of arbitrary type    |
+| `computation` | `Computation`            | 类型为 `T_0, T_1,   |
+:               :                          : ..., T_N -> S` 的计算，它有 :
+:               :                          : N 个任意类型的参数  :
+| `args`        | sequence of N            | 任意类型的 N 个 参数 |
 :               : `ComputationDataHandle`s :                                  :
 
-The arity and types of the `args` must match the parameters of the
-`computation`. It is allowed to have no `args`.
+参数 `args` 的数目和类型必须与计算 `computation` 相匹配。当然，没有参数 `args` 也是允许的。
 
 ## Clamp
 
