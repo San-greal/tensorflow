@@ -37,9 +37,7 @@ output[i0, ..., iN, j0, ..., jM] = operand[j0, ..., jM]
 
 | 参数     | 类型                     | 语义                        |
 | ------------- | ------------------------ | -------------------------------- |
-| `computation` | `Computation`            | 类型为 `T_0, T_1,   |
-:               :                          : ..., T_N -> S` 的计算，它有 :
-:               :                          : N 个任意类型的参数  :
+| `computation` | `Computation`            | 类型为 `T_0, T_1, ..., T_N ->S` 的计算，它有 N 个任意类型的参数  |
 | `args`        | sequence of N            | 任意类型的 N 个 参数 |
 :               : `ComputationDataHandle`s :                                  :
 
