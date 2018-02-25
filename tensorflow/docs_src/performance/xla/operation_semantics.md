@@ -125,33 +125,25 @@ then v12 == f32[8x3] {{10, 11, 12},
 
 另请参阅 [`ComputationBuilder::ConcatInDim`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
-Concatenate composes an array from multiple array operands. The array is of the
-same rank as each of the input array operands (which must be of the same rank as
-each other) and contains the arguments in the order that they were specified.
+串连操作是将多个数组操作数合并成一个数组。输出数组与输入数组的秩必须是一样的（即要求输入数组的秩也要相同），并且它按输入次序包含了输入数组的所有元素。
 
 <b> `Concatenate(operands..., dimension)` </b>
 
-| Arguments   | Type                    | Semantics                            |
+| 参数 | 类型 | 语义 |
 | ----------- | ----------------------- | ------------------------------------ |
-| `operands`  | sequence of N           | N arrays of type T with dimensions   |
-:             : `ComputationDataHandle` : [L0, L1, ...]. Requires N >= 1.      :
-| `dimension` | `int64`                 | A value in the interval `[0, N)`     |
-:             :                         : that names the dimension to be       :
-:             :                         : concatenated between the `operands`. :
+| `operands`  | N 个 `ComputationDataHandle` 的序列 | 类型为 T 维度为 [L0, L1, ...] 的 N 个数组。要求 N>=1 |
+| `dimension` | `int64` | 区间 `[0, N)` 中的一个整数值，令那些 `operands` 能够串连起来的维度名 |
 
-With the exception of `dimension` all dimensions must be the same. This is
-because XLA does not support "ragged" arrays Also note that rank-0 values
-cannot be concatenated (as it's impossible to name the dimension along which the
-concatenation occurs).
+除了 `dimension` 之外，其它维度都必须是一样的。这是因为 XLA 不支持 "不规则" 数组。还要注意的是，0-阶的标量值是无法串连在一起的（因为无法确定串连到底发生在哪个维度）。
 
-1-dimensional example:
+1-维示例：
 
 ```
 Concat({{2, 3}, {4, 5}, {6, 7}}, 0)
 >>> {2, 3, 4, 5, 6, 7}
 ```
 
-2-dimensional example:
+2-维示例：
 
 ```
 let a = {
@@ -171,39 +163,29 @@ Concat({a, b}, 0)
 }
 ```
 
-Diagram:
+图表：
 <div style="width:95%; margin:auto; margin-bottom:10px; margin-top:20px;">
   <img style="width:100%" src="https://www.tensorflow.org/images/ops_concatenate.png">
 </div>
 
 ## ConvertElementType
 
-See also
-[`ComputationBuilder::ConvertElementType`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::ConvertElementType`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
-Similar to an element-wise `static_cast` in C++, performs an element-wise
-conversion operation from a data shape to a target shape. The dimensions must
-match, and the conversion is an element-wise one; e.g. `s32` elements become
-`f32` elements via an `s32`-to-`f32` conversion routine.
+类似于 C++ 中逐个元素的 `static_cast` 运算，本操作也从一个数据形状到目标形状执行逐个元素的转换操作；比如，通过一个 `s32`-to-`f32` 的转换程序，`s32` 元素变成了 `f32` 元素。
 
 <b> `ConvertElementType(operand, new_element_type)` </b>
 
-Arguments          | Type                    | Semantics
+ 参数 | 类型 | 语义                                         
 ------------------ | ----------------------- | ---------------------------
-`operand`          | `ComputationDataHandle` | array of type T with dims D
-`new_element_type` | `PrimitiveType`         | type U
+`operand`          | `ComputationDataHandle` | 类型为 T 维度为 D 的数组
+`new_element_type` | `PrimitiveType`         | 类型 U
 
-If the dimensions of the operand and the target shape do not match, or an
-invalid conversion is requested (e.g. to/from a tuple) an error will be
-produced.
+如果操作数（operand）的维度和目标形状不匹配，或者执行一个非法的转换（比如输入或目标为一个元组），则会产生错误。
 
-A conversion such as `T=s32` to `U=f32` will perform a normalizing int-to-float
-conversion routine such as round-to-nearest-even.
+诸如 `T=s32` 至 `U=f32` 的转换，并执行通常的 int-to-float 的转换过程，比如 round-to-nearest-even。
 
-> Note: The precise float-to-int and visa-versa conversions are currently
-> unspecified, but may become additional arguments to the convert operation in
-> the future.  Not all possible conversions have been implemented for all
->targets.
+> 注意：精确的 float-to-int 或反过程目前仍没有指定，但在将来，可能会在转换操作的额外参数中指定。不是所有目标的所有可能的转换都已经实现。
 
 ```
 let a: s32[3] = {0, 1, 2};
@@ -211,127 +193,75 @@ let b: f32[3] = convert(a, f32);
 then b == f32[3]{0.0, 1.0, 2.0}
 ```
 
-## Conv (convolution)
+## Conv (卷积)
 
-See also
-[`ComputationBuilder::Conv`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::Conv`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
-As ConvWithGeneralPadding, but the padding is specified in a short-hand way as
-either SAME or VALID. SAME padding pads the input (`lhs`) with zeroes so that
-the output has the same shape as the input when not taking striding into
-account. VALID padding simply means no padding.
+类似于 ConvWithGeneralPadding，但是边缘填充（padding）方式比较简单，要么是 SAME 要么是 VALID。SAME 方式将对输入（`lhs`）边缘填充零，使得不考虑步长（striding）的情况下输出与输入的维度形状一致。VALID 填充方式则表示没有填充。
 
-## ConvWithGeneralPadding (convolution)
+## ConvWithGeneralPadding (卷积)
 
-See also
-[`ComputationBuilder::ConvWithGeneralPadding`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::ConvWithGeneralPadding`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
-Computes a convolution of the kind used in neural networks. Here, a convolution
-can be thought of as a n-dimensional window moving across a n-dimensional base
-area and a computation is performed for each possible position of the window.
+在神经网络中要做这种卷积的计算。在这里，一个卷积可想象为一个 n-维窗口在一个 n-维底空间上移动，而窗口的每个可能的位置都触发一次计算。
 
-| Arguments        | Type                    | Semantics                     |
+| 参数 | 类型 | 语义                                         |
 | ---------------- | ----------------------- | ----------------------------- |
-| `lhs`            | `ComputationDataHandle` | rank n+2 array of inputs      |
-| `rhs`            | `ComputationDataHandle` | rank n+2 array of kernel      |
-:                  :                         : weights                       :
-| `window_strides` | `ArraySlice<int64>`     | n-d array of kernel strides   |
-| `padding`        | `ArraySlice<pair<int64, | n-d array of (low, high)      |
-:                  : int64>>`                : padding                       :
-| `lhs_dilation`   | `ArraySlice<int64>`     | n-d lhs dilation factor array |
-| `rhs_dilation`   | `ArraySlice<int64>`     | n-d rhs dilation factor array |
+| `lhs`            | `ComputationDataHandle` | 秩为 n+2 的输入数组   |
+| `rhs`            | `ComputationDataHandle` | 秩为 n+2 的内核权重数组 |
+| `window_strides` | `ArraySlice<int64>`     | n-维内核步长数组 |
+| `padding`        | `ArraySlice<pair<int64, int64>>` | n-维 (低, 高) 填充数据     |
+| `lhs_dilation`   | `ArraySlice<int64>`     | n-维左边扩张因子数组 |
+| `rhs_dilation`   | `ArraySlice<int64>`     | n-维右边扩张因子数组 |
 
-Let n be the number of spatial dimensions. The `lhs` argument is a rank n+2
-array describing the base area. This is called the input, even though of course
-the rhs is also an input. In a neural network, these are the input activations.
-The n+2 dimensions are, in this order:
+令 n 为空间维度的数目。`lhs` 参数是一个 n+2 阶数组，它描述底空间区域的维度。它被为输入，其实 rhs 也是输入。在神经网络中，它们都属于输入激励。n+2 维的含义依次为：
 
-*   `batch`: Each coordinate in this dimension represents an independent input
-    for which convolution is carried out.
-*   `z/depth/features`: Each (y,x) position in the base area has a vector
-    associated to it, which goes into this dimension.
-*   `spatial_dims`: Describes the `n` spatial dimensions that define the base
-    area that the window moves across.
+*   `batch`: 此维中每个坐标表示执行卷积的一个独立输入
+*   `z/depth/features`: 基空间区域中的每个 (y,x) 位置都指定有一个矢量，由这个维度来表示
+*   `spatial_dims`: 描述了定义了底空间区域的那 `n` 个空间维度，窗口要在它上面移动
 
-The `rhs` argument is a rank n+2 array describing the convolutional
-filter/kernel/window. The dimensions are, in this order:
+`rhs` 参数是一个 n+2 阶的数组，它描述了卷积过滤器/内核/窗口。这些维度的含义依次为：
 
-*   `output-z`: The `z` dimension of the output.
-*   `input-z`: The size of this dimension should equal the size of the `z`
-    dimension in lhs.
-*   `spatial_dims`: Describes the `n` spatial dimensions that define the n-d
-    window that moves across the base area.
+*   `output-z`: 输出的 `z` 维度。
+*   `input-z`: 此维度的大小等于 lhs 参数的 `z` 维度的大小。
+*   `spatial_dims`: 描述了定义此 n-维窗口的那 `n` 个空间维度，此窗口用于在底空间上移动。
 
-The `window_strides` argument specifies the stride of the convolutional window
-in the spatial dimensions. For example, if the stride in a the first spatial
-dimension is 3, then the window can only be placed at coordinates where the
-first spatial index is divisible by 3.
+`window_strides` 参数指定了卷积窗口在空间维度上的步长。比如，如果步长为 3，则窗口只用放在第一个空间维度指标为 3 的倍数的那些位置上。
 
-The `padding` argument specifies the amount of zero padding to be applied to the
-base area. The amount of padding can be negative -- the absolute value of
-negative padding indicates the number of elements to remove from the specified
-dimension before doing the convolution. `padding[0]` specifies the padding for
-dimension `y` and `padding[1]` specifies the padding for dimension `x`. Each
-pair has the low padding as the first element and the high padding as the second
-element. The low padding is applied in the direction of lower indices while the
-high padding is applied in the direction of higher indices. For example, if
-`padding[1]` is `(2,3)` then there will be a padding by 2 zeroes on the left and
-by 3 zeroes on the right in the second spatial dimension. Using padding is
-equivalent to inserting those same zero values into the input (`lhs`) before
-doing the convolution.
+`padding` 参数指定了在底空间区域边缘填充多少个零。填充数目可以是负值 -- 这时数目绝对值表示执行卷积前要移除多少个元素。`padding[0]` 指定维度 `y` 的填充对子，`padding[1]` 指定的是维度 `x` 的填充对子。每个填充对子包含两个值，第一个值指定低位填充数目，第二个值指定高位填充数目。低位填充指的是低指标方向的填充，高位填充则是高指标方向的填充。比如，如果 `padding[1]` 为 `(2,3)`，则在第二个空间维度上，左边填充 2 个零，右边填充 3 个零。填充等价于在执行卷积前在输入 (`lhs`) 中插入这些零值。
 
-The `lhs_dilation` and `rhs_dilation` arguments specify the dilation factor to
-be applied to the lhs and rhs, respectively, in each spatial dimension. If the
-dilation factor in a spatial dimension is d, then d-1 holes are implicitly
-placed between each of the entries in that dimension, increasing the size of the
-array. The holes are filled with a no-op value, which for convolution means
-zeroes.
+`lhs_dilation` 和 `rhs_dilation` 参数指定了扩张系数，分别应用于 lhs 和 rhs 的每个空间维度上。如果在一个空间维度上的扩张系数为 d，则 d-1 个洞将被插入到这个维度的每一项之间，从而增加数组的大小。这些洞被填充上 no-op 值，对于卷积来说表示零值。
 
-Dilation of the rhs is also called atrous convolution. For more details, see the
-@{tf.nn.atrous_conv2d}. Dilation of the lhs is
-also called deconvolution.
+rhs 的扩张也被称为深黑卷积（atrous convolution）。更多细节请参考 @{tf.nn.atrous_conv2d}。 lhs 的扩张又被称为反卷积（deconvolution）。
 
-The output shape has these dimensions, in this order:
+输出形状的维度含义依次为：
 
-*   `batch`: Same size as `batch` on the input (`lhs`).
-*   `z`: Same size as `output-z` on the kernel (`rhs`).
-*   `spatial_dims`: One value for each valid placement of the convolutional
-    window.
+*   `batch`: 和输入（`lhs`）具有相同的 `batch` 大小。
+*   `z`: 和内核（`rhs`）具有相同的 `output-z` 大小。
+*   `spatial_dims`: 卷积窗口的每个合法放置值。
 
-The valid placements of the convolutional window are determined by the strides
-and the size of the base area after padding.
+卷积窗口的合法放置是由步长和填充后的底空间区域大小所决定的。
 
-To describe what a convolution does, consider a 2d convolution, and pick some
-fixed `batch`, `z`, `y`, `x` coordinates in the output. Then `(y,x)` is a
-position of a corner of the window within the base area (e.g. the upper left
-corner, depending on how you interpret the spatial dimensions). We now have a 2d
-window, taken from the base area, where each 2d point is associated to a 1d
-vector, so we get a 3d box. From the convolutional kernel, since we fixed the
-output coordinate `z`, we also have a 3d box. The two boxes have the same
-dimensions, so we can take the sum of the element-wise products between the two
-boxes (similar to a dot product). That is the output value.
+为描述卷积到底干了什么，考虑一个二维卷积，为输出选择某个固定的 `batch`，`z`，`y`，`x` 坐标。则 `(y,x)` 是底空间区域中的某个窗口的一个角的位置（比如左上角，具体是哪个要看你如何编码其空间维度）。现在，我们从底空间区域中得到了一个二维窗口，其中每一个二维点都指定有一个一维矢量，所以，我们得到一个三维盒子。对于卷积过滤器而言，因为我们固定了输出坐标 `z`，我们也有一个三维盒子。这两个盒子具有相同的维度，所以我们可以让它们逐个元素地相乘并相加（类似于点乘）。最后得到输出值。
 
-Note that if `output-z` is e.g., 5, then each position of the window produces 5
-values in the output into the `z` dimension of the output. These values differ
-in what part of the convolutional kernel is used - there is a separate 3d box of
-values used for each `output-z` coordinate. So you could think of it as 5
-separate convolutions with a different filter for each of them.
+注意，如果 `output-z` 等于一个数，比如 5，则此窗口的每个位置都在输出的 `z` 维 上产生 5 个值。这些值对应于卷积过滤器的不同部分，即每个 `output-z` 坐标，都由一个独立的三维盒子生成。所以，你可以将其想象成 5 个分立的卷积，每个都用了不同的过滤器。
 
-Here is pseudo-code for a 2d convolution with padding and striding:
+下面是一个考虑了填充和步长的二维卷积伪代码：
 
 ```
-for (b, oz, oy, ox) {  // output coordinates
+for (b, oz, oy, ox) {  // 输出坐标
   value = 0;
-  for (iz, ky, kx) {  // kernel coordinates and input z
+  for (iz, ky, kx) {  // 内核坐标和输入 z
     iy = oy*stride_y + ky - pad_low_y;
     ix = ox*stride_x + kx - pad_low_x;
-    if ((iy, ix) inside the base area considered without padding) {
+    if (底空间区域内的(iy, ix)是不在填充位置上的) {
       value += input(b, iz, iy, ix) * kernel(oz, iz, ky, kx);
     }
   }
   output(b, oz, oy, ox) = value;
 }
 ```
+
 
 ## CrossReplicaSum
 
