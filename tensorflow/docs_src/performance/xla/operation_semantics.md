@@ -94,21 +94,21 @@ let v = f32[4x2x3] {{{10, 11, 12},  {15, 16, 17}},
                     {{30, 31, 32},  {35, 36, 37}},
                     {{40, 41, 42},  {45, 46, 47}}};
 
-// Collapse to a single dimension, leaving one dimension.
+// 折叠至一个维度，即只留下一个维度
 let v012 = Collapse(v, {0,1,2});
 then v012 == f32[24] {10, 11, 12, 15, 16, 17,
                       20, 21, 22, 25, 26, 27,
                       30, 31, 32, 35, 36, 37,
                       40, 41, 42, 45, 46, 47};
 
-// Collapse the two lower dimensions, leaving two dimensions.
+// 折叠两个较低维度，剩下两个维度
 let v01 = Collapse(v, {0,1});
 then v01 == f32[4x6] {{10, 11, 12, 15, 16, 17},
                       {20, 21, 22, 25, 26, 27},
                       {30, 31, 32, 35, 36, 37},
                       {40, 41, 42, 45, 46, 47}};
 
-// Collapse the two higher dimensions, leaving two dimensions.
+// 折叠两个较高维度，剩下两个维度
 let v12 = Collapse(v, {1,2});
 then v12 == f32[8x3] {{10, 11, 12},
                       {15, 16, 17},
@@ -121,10 +121,9 @@ then v12 == f32[8x3] {{10, 11, 12},
 
 ```
 
-## Concatenate
+## 串连（Concatenate）
 
-See also
-[`ComputationBuilder::ConcatInDim`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::ConcatInDim`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
 Concatenate composes an array from multiple array operands. The array is of the
 same rank as each of the input array operands (which must be of the same rank as
