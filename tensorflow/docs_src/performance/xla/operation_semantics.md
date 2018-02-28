@@ -263,58 +263,44 @@ for (b, oz, oy, ox) {  // 输出坐标
 ```
 
 
+
 ## CrossReplicaSum
 
-See also
-[`ComputationBuilder::CrossReplicaSum`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::CrossReplicaSum`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
-Computes a sum across replicas.
+跨多个副本（replica）的求和。
 
 <b> `CrossReplicaSum(operand)` </b>
 
-| Arguments    | Type                    | Semantics                          |
+| 参数 | 类型 | 语义                                         |
 | ------------ | ----------------------- | ---------------------------------- |
-| `operand`    | `ComputationDataHandle` | Array to sum across replicas.      |
+| `operand`    | `ComputationDataHandle` | 跨多个副本待求和的数组。   |
 
-The output shape is the same as the input shape. For example, if there are two
-replicas and the operand has the value `(1.0, 2.5)` and `(3.0, 5.1)`
-respectively on the two replicas, then the output value from this op will be
-`(4.0, 7.6)` on both replicas.
+输出的维度形状与输入形状一样。比如，如果有两个副本，而操作数在这两个副本上的值分别为 `(1.0, 2.5)` 和 `(3.0, 5.1)`，则此操作在两个副本上的输出值都是 `(4.0, 7.6)`。
 
-Computing the result of CrossReplicaSum requires having one input from each
-replica, so if one replica executes a CrossReplicaSum node more times than
-another, then the former replica will wait forever. Since the replicas are all
-running the same program, there are not a lot of ways for that to happen, but it
-is possible when a while loop's condition depends on data from infeed and the
-data that is infed causes the while loop to iterate more times on one replica
-than another.
+计算 CrossReplicaSum 的结果需要从每个副本中获得一个输入，所以，如果一个副本执行一个 CrossReplicaSum 结点的次数多于其它副本，则前一个副本将永久等待。因此这些副本都运行的是同一个程序，这种情况发生的机会并不多，其中一种可能的情况是，一个 while 循环的条件依赖于输入的数据，而被输入的数据导致此循环在一个副本上执行的次数多于其它副本。
 
 ## CustomCall
 
-See also
-[`ComputationBuilder::CustomCall`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::CustomCall`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
-Call a user-provided function within a computation.
+在计算中调用由用户提供的函数。
 
 <b> `CustomCall(target_name, args..., shape)` </b>
 
-| Arguments     | Type                     | Semantics                        |
+| 参数 | 类型 | 语义                                         |
 | ------------- | ------------------------ | -------------------------------- |
-| `target_name` | `string`                 | Name of the function. A call     |
-:               :                          : instruction will be emitted      :
-:               :                          : which targets this symbol name.  :
-| `args`        | sequence of N            | N arguments of arbitrary type,   |
-:               : `ComputationDataHandle`s : which will be passed to the      :
-:               :                          : function.                        :
-| `shape`       | `Shape`                  | Output shape of the function     |
+| `target_name` | `string`                 | 函数名称。一个指向这个符号名称的调用指令会被发出 |
+| `args`        | N 个 `ComputationDataHandle` 的序列            | 传递给此函数的 N 个任意类型的参数 |
+| `shape`       | `Shape`                  | 此函数的输出维度形状  |
 
-The function signature is the same, regardless of the arity or type of args:
+不管参数的数目和类型，此函数的签名（signature）都是一样的。
 
 ```
 extern "C" void target_name(void* out, void** in);
 ```
 
-For example, if CustomCall is used as follows:
+比如，如果使用 CustomCall 如下：
 
 ```
 let x = f32[2] {1,2};
@@ -323,7 +309,7 @@ let y = f32[2x3] {{10, 20, 30}, {40, 50, 60}};
 CustomCall("myfunc", {x, y}, f32[3x3])
 ```
 
-Here is an example of an implementation of `myfunc`:
+`myfunc` 实现的一个示例如下：
 
 ```
 extern "C" void myfunc(void* out, void** in) {
@@ -343,298 +329,214 @@ extern "C" void myfunc(void* out, void** in) {
 }
 ```
 
-The user-provided function must not have side-effects and its execution must be
-idempotent.
+这个用户提供的函数不能有副作用，而且它的执行结果必须是确定的（即两次同样的调用不能有不同结果）。
 
-> Note: The opaque nature of the user-provided function restricts optimization
-> opportunities for the compiler. Try to express your computation in terms of
-> native XLA ops whenever possible; only use CustomCall as a last resort.
+> 注：用户函数的黑箱特点限制了编译器的优化潜力。所以，尽量使用原生的 XLA 操作来表示你的计算；只有在迫不得已的情况下才使用 CustomCall。
 
-## Dot
+## 点乘（Dot）
 
-See also
-[`ComputationBuilder::Dot`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::Dot`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
 <b> `Dot(lhs, rhs)` </b>
 
-Arguments | Type                    | Semantics
+ 参数 | 类型 | 语义                                     
 --------- | ----------------------- | ---------------
-`lhs`     | `ComputationDataHandle` | array of type T
-`rhs`     | `ComputationDataHandle` | array of type T
+`lhs`     | `ComputationDataHandle` | 类型为 T 的数组
+`rhs`     | `ComputationDataHandle` | 类型为 T 的数组
 
-The exact semantics of this operation depend on the ranks of the operands:
+此操作的具体语义由它的两个操作数的秩来决定：
 
-| Input                   | Output                | Semantics               |
+| 输入 | 输出 | 语义                                     |
 | ----------------------- | --------------------- | ----------------------- |
-| vector [n] `dot` vector | scalar                | vector dot product      |
-: [n]                     :                       :                         :
-| matrix [m x k] `dot`    | vector [m]            | matrix-vector           |
-: vector [k]              :                       : multiplication          :
-| matrix [m x k] `dot`    | matrix [m x n]        | matrix-matrix           |
-: matrix [k x n]          :                       : multiplication          :
+| 矢量 [n] `dot` 矢量 [n] | 标量 | 矢量点乘 |
+| 矩阵 [m x k] `dot` 矢量 [k]   | 矢量 [m]            | 矩阵矢量乘法 |
+| 矩阵 [m x k] `dot` 矩阵 [k x n]   | 矩阵 [m x n]        | 矩阵矩阵乘法 |
 
-The operation performs sum of products over the last dimension of `lhs` and the
-one-before-last dimension of `rhs`. These are the "contracted" dimensions. The
-contracted dimensions of `lhs` and `rhs` must be of the same size. In practice,
-it can be used to perform dot products between vectors, vector/matrix
-multiplications or matrix/matrix multiplications.
+此操作执行的是 `lhs` 的最后一维与 `rhs` 的倒数第二维之间的乘法结果的求和。因而计算结果会导致维度的 "缩减"。`lhs` 和 `rhs` 缩减的维度必须具有相同的大小。在实际中，我们会用到矢量之间的点乘，矢量/矩阵点乘，以及矩阵间的乘法。
 
-## Element-wise binary arithmetic operations
+## 逐个元素的二元算术操作
 
-See also
-[`ComputationBuilder::Add`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::Add`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
-A set of element-wise binary arithmetic operations is supported.
+XLA 支持多个逐个元素的二元算术操作。
 
 <b> `Op(lhs, rhs)` </b>
 
-Where `Op` is one of `Add` (addition), `Sub` (subtraction), `Mul`
-(multiplication), `Div` (division), `Rem` (remainder), `Max` (maximum), `Min`
-(minimum), `LogicalAnd` (logical AND), or `LogicalOr` (logical OR).
+其中 `Op` 可以是如下操作之一：`Add` (加法), `Sub` (减法), `Mul` (乘法), `Div` (除法), `Rem` (余数), `Max` (最大值), `Min` (最小值), `LogicalAnd` (逻辑且), 或 `LogicalOr` (逻辑或)。
 
-Arguments | Type                    | Semantics
+ 参数 | 类型 | 语义                                     
 --------- | ----------------------- | ----------------------------------------
-`lhs`     | `ComputationDataHandle` | left-hand-side operand: array of type T
-`rhs`     | `ComputationDataHandle` | right-hand-side operand: array of type T
+`lhs`     | `ComputationDataHandle` | 左手边操作数：类型为 T 的数组
+`rhs`     | `ComputationDataHandle` | 右手边操作数：类型为 T 的数组
 
-The arguments' shapes have to be either similar or compatible. See the
-@{$broadcasting$broadcasting} documentation about what it means for shapes to
-be compatible. The result of an operation has a shape which is the result of
-broadcasting the two input arrays. In this variant, operations between arrays of
-different ranks are *not* supported, unless one of the operands is a scalar.
+这两个参数的维度形状要么相似，要么兼容。关于维度形状相似或兼容的准确含义，参见文档 @{$broadcasting$broadcasting}。 一个这样的二元操作的结果的维度形状为两个输入数组的广播的结果。虽然可以广播，但不同秩的数组之间的运算是不支持的，除非其中之一是标量。
 
-When `Op` is `Rem`, the sign of the result is taken from the dividend, and the
-absolute value of the result is always less than the divisor's absolute value.
+当 `Op` 为 `Rem` 时，结果的符号与被除数一致，而结果的绝对值总是小于除数的绝对值。
 
-An alternative variant with different-rank broadcasting support exists for these
-operations:
+不过，还是可以用如下接口来支持不同秩操作数的广播：
 
 <b> `Op(lhs, rhs, broadcast_dimensions)` </b>
 
-Where `Op` is the same as above. This variant of the operation should be used
-for arithmetic operations between arrays of different ranks (such as adding a
-matrix to a vector).
+其中 `Op` 的含义同上。这种接口用于具有不同秩的数组之间的算术操作（比如将一个矩阵与一个矢量相加）。
 
-The additional `broadcast_dimensions` operand is a slice of integers used to
-expand the rank of the lower-rank operand up to the rank of the higher-rank
-operand. `broadcast_dimensions` maps the dimensions of the lower-rank shape to
-the dimensions of the higher-rank shape. The unmapped dimensions of the expanded
-shape are filled with dimensions of size one. Degenerate-dimension broadcasting
-then broadcasts the shapes along these degenerate dimension to equalize the
-shapes of both operands. The semantics are described in detail on the
-@{$broadcasting$broadcasting page}.
+额外的参数 `broadcast_dimensions` 为一个整数指标的切片，用于将低阶操作数的秩扩张至高阶操作数的秩。`broadcast_dimensions` 将低阶形状映射到高阶形状上。扩张后的形状的未被映射的维度将被填充为大小为 1 的退化维度。然后执行退化维度广播，即让维度形状沿这些退化维度扩大，使得与两个操作数的形状相等。更多细节请参阅 @{$broadcasting$广播页面}。
 
-## Element-wise comparison operations
+## 逐个元素的比较操作
 
-See also
-[`ComputationBuilder::Eq`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::Eq`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
 
-A set of standard element-wise binary comparison operations is supported. Note
-that standard IEEE 754 floating-point comparison semantics apply when comparing
-floating-point types.
+XLA 还支持标准的逐个元素的二元比较操作。注意：当比较浮点类型时，遵循的是标准的 IEEE 754 浮点数语义。
 
 <b> `Op(lhs, rhs)` </b>
 
-Where `Op` is one of `Eq` (equal-to), `Ne` (not equal-to), `Ge`
-(greater-or-equal-than), `Gt` (greater-than), `Le` (less-or-equal-than), `Le`
-(less-than).
+其中 `Op` 可以是如下操作之一：`Eq` (相等), `Ne` (不等), `Ge` (大于或等于), `Gt` (大于), `Le` (小于或等于), `Le` (小于)。
 
-Arguments | Type                    | Semantics
+ 参数 | 类型 | 语义                                     
 --------- | ----------------------- | ----------------------------------------
-`lhs`     | `ComputationDataHandle` | left-hand-side operand: array of type T
-`rhs`     | `ComputationDataHandle` | right-hand-side operand: array of type T
+`lhs`     | `ComputationDataHandle` | 左手边操作数：类型为 T 的数组
+`rhs`     | `ComputationDataHandle` | 右手边操作数：类型为 T 的数组
 
-The arguments' shapes have to be either similar or compatible. See the
-@{$broadcasting$broadcasting} documentation about what it means for shapes to
-be compatible. The result of an operation has a shape which is the result of
-broadcasting the two input arrays with the element type `PRED`. In this variant,
-operations between arrays of different ranks are *not* supported, unless one of
-the operands is a scalar.
+这两个参数的维度形状要么相似要么兼容。维度形状的相似或兼容的具体含义参见文档 @{$broadcasting$broadcasting}。操作结果的维度形状为输入数组的形状广播的结果，结果中的元素类型为 `PERD`。在这类操作中，不同秩的数组之间的操作是不支持的，除非其中之一为标量。
 
-An alternative variant with different-rank broadcasting support exists for these
-operations:
+要想用广播来比较不同秩的数组，需要用到如下接口：
 
 <b> `Op(lhs, rhs, broadcast_dimensions)` </b>
 
-Where `Op` is the same as above. This variant of the operation should be used
-for comparison operations between arrays of different ranks (such as adding a
-matrix to a vector).
+其中 `Op` 含义同上。这种接口应该用于不同阶的数组之间的比较操作（比如将一个矩阵加到一个矢量上）。
 
-The additional `broadcast_dimensions` operand is a slice of integers specifying
-the dimensions to use for broadcasting the operands. The semantics are described
-in detail on the @{$broadcasting$broadcasting page}.
+额外的 `broadcast_dimensions` 操作数是一个整数的指标切片，用于指定将操作数广播时的维度。关于其语义的细节内容可参考 @{$broadcasting$广播页面}。
 
-## Element-wise unary functions
+## 逐个元素的一元函数
 
-ComputationBuilder supports these element-wise unary functions:
+ComputationBuilder 支持下列逐个元素的一元函数：
 
-<b>`Abs(operand)`</b> Element-wise abs `x -> |x|`.
+<b>`Abs(operand)`</b> 逐个元素的绝对值 `x -> |x|`。
 
-<b>`Ceil(operand)`</b> Element-wise ceil `x -> ⌈x⌉`.
+<b>`Ceil(operand)`</b> 逐个元素的整数上界 `x -> ⌈x⌉`。
 
-<b>`Cos(operand)`</b> Element-wise cosine `x -> cos(x)`.
+<b>`Cos(operand)`</b> 逐个元素的余弦 `x -> cos(x)`。
 
-<b>`Exp(operand)`</b> Element-wise natural exponential `x -> e^x`.
+<b>`Exp(operand)`</b> 逐个元素的自然幂指数 `x -> e^x`。
 
-<b>`Floor(operand)`</b> Element-wise floor `x -> ⌊x⌋`.
+<b>`Floor(operand)`</b> 逐个元素的整数下界 `x -> ⌊x⌋`。
 
-<b>`IsFinite(operand)`</b> Tests whether each element of `operand` is finite,
-i.e., is not positive or negative infinity, and is not `NaN`. Returns an array
-of `PRED` values with the same shape as the input, where each element is `true`
-if and only if the corresponding input element is finite.
+<b>`IsFinite(operand)`</b> 测试 `operand` 的每个元素是否是有限的，即不是正无穷或负无穷，也不是 `NoN`。返回一个 `PRED` 值的数组，维度形状与输入一致，一个元素为 `true` 当且仅当相应的输入元素是有限的。
 
-<b>`Log(operand)`</b> Element-wise natural logarithm `x -> ln(x)`.
+<b>`Log(operand)`</b> 逐个元素的自然对数 `x -> ln(x)`。
 
-<b>`LogicalNot(operand)`</b> Element-wise logical not `x -> !(x)`.
+<b>`LogicalNot(operand)`</b> 逐个元素的逻辑非 `x -> !(x)`。
 
-<b>`Neg(operand)`</b> Element-wise negation `x -> -x`.
+<b>`Neg(operand)`</b> 逐个元素取负值 `x -> -x`。
 
-<b>`Sign(operand)`</b> Element-wise sign operation `x -> sgn(x)` where
+<b>`Sign(operand)`</b> 逐个元素求符号 `x -> sgn(x)`，其中 
 
 $$\text{sgn}(x) = \begin{cases} -1 & x < 0\\ 0 & x = 0\\ 1 & x > 0 \end{cases}$$
 
-using the comparison operator of the element type of `operand`.
+它使用的是 `operand` 的元素类型的比较运算符。
 
-<b>`Tanh(operand)`</b> Element-wise hyperbolic tangent `x -> tanh(x)`.
+<b>`Tanh(operand)`</b> 逐个元素的双曲正切 `x -> tanh(x)`。
 
 
-Arguments | Type                    | Semantics
+ 参数 | 类型 | 语义                                     
 --------- | ----------------------- | ---------------------------
-`operand` | `ComputationDataHandle` | The operand to the function
+`operand` | `ComputationDataHandle` | 函数的操作数
 
-The function is applied to each element in the `operand` array, resulting in an
-array with the same shape. It is allowed for `operand` to be a scalar (rank 0).
+此函数应用于 `operand` 数组的每个元素上，结果是同样形状的一个数组。`operand` 也可以是一个标量，即 0 阶张量。
 
 
 ## BatchNormTraining
 
-See also
-[`ComputationBuilder::BatchNormTraining`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h) and
-[`the original batch normalization paper`](https://arxiv.org/abs/1502.03167)
-for a detailed description of the algorithm.
+关于此算法的细节描述，请参阅 [`ComputationBuilder::BatchNormTraining`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h) 和 [`原始批量标准化论文`](https://arxiv.org/abs/1502.03167)。
 
-<b> Warning: Not implemented on GPU backend yet. </b>
+<b> 警告：尚没有在 GPU 后端上实现 </b>
 
-Normalizes an array across batch and spatial dimensions.
+在一个批次的多个空间维度上进行标准化。
 
 <b> `BatchNormTraining(operand, scale, offset, epsilon, feature_index)` </b>
 
-| Arguments       | Type                    | Semantics                        |
+| 参数 | 类型 | 语义                                     |
 | --------------- | ----------------------- | -------------------------------- |
-| `operand`       | `ComputationDataHandle` | n dimensional array to be        |
-:                 :                         : normalized                       :
-| `scale`         | `ComputationDataHandle` | 1 dimensional array              |
-:                 :                         : (\\(\gamma\\))                   :
-| `offset`        | `ComputationDataHandle` | 1 dimensional array              |
-:                 :                         : (\\(\beta\\ )                    :
-| `epsilon`       | `float`                 | Epsilon value (\\(\epsilon\\))   |
-| `feature_index` | `int64`                 | Index to feature dimension       |
-:                 :                         : in `operand`                     :
+| `operand`       | `ComputationDataHandle` | 待标准化的 n 维数组      |
+| `scale`         | `ComputationDataHandle` | 1 维数组 (\\(\gamma\\)) |
+| `offset`        | `ComputationDataHandle` | 1 维数组 (\\(\beta\\ )) |
+| `epsilon`       | `float`                 | Epsilon 值 (\\(\epsilon\\))   |
+| `feature_index` | `int64`                 | 在 `operand` 中的特征维度的索引   |
 
+对于特征维度中的每个特征 (`feature_index` 为 `operand` 中的特征维度的索引)，此操作会计算出关于其它所有维度的数据的均值和方差，然后用这个均值和标准差来对 `operand` 中的每个元素进行标准化。如果传入一个非法的 `feature_index`，则会产生一个错误。
 
-For each feature in the feature dimension (`feature_index` is the index for the
-feature dimension in `operand`), the operation calculates the mean and variance
-across all the other dimensions and use the mean and variance to normalize each
-element in `operand`. If an invalid `feature_index` is passed, an error is
-produced.
+此算法对 `operand` \\(x\\) 中的每个批次做如下运算（假定 `operand` 是一个 4 维数组，它包含 `m` 个元素，`w` 和 `h` 为其空间维度的大小）：
 
-The algorithm goes as follows for each batch in `operand` \\(x\\) that
-contains `m` elements with `w` and `h` as the size of spatial dimensions (
-assuming `operand` is an 4 dimensional array):
-
-- Calculates batch mean \\(\mu_l\\) for each feature `l` in feature dimension:
+- 对特征维度中的每个特征 `l` 计算批次的均值 \\(\mu_l\\) ：
 \\(\mu_l=\frac{1}{mwh}\sum_{i=1}^m\sum_{j=1}^w\sum_{k=1}^h x_{ijkl}\\)
 
-- Calculates batch variance \\(\sigma^2_l\\):
+- 计算批次的方差 \\(\sigma^2_l\\)：
 \\(\sigma^2_l=\frac{1}{mwh}\sum_{i=1}^m\sum_{j=1}^w\sum_{k=1}^h (x_{ijkl} - \mu_l)^2\\)
 
-- Normalizes, scales and shifts:
+- 标准化，缩放和平移：
 \\(y_{ijkl}=\frac{\gamma_l(x_{ijkl}-\mu_l)}{\sqrt[2]{\sigma^2_l+\epsilon}}+\beta_l\\)
 
-The epsilon value, usually a small number, is added to avoid divide-by-zero errors.
+epsilon 值通常是一个较小的数，加上它可以避免除以零。
 
-The output type is a tuple of three ComputationDataHandles:
+输出类型是三个 ComputationDataHandles 的三元组：
 
-| Outputs      | Type                    | Semantics                            |
+| 输出 | 类型 | 语义 |
 | ------------ | ----------------------- | -------------------------------------|
-| `output`     | `ComputationDataHandle` | n dimensional array with the same    |
-:              :                         : shape as input `operand` (y)         :
-| `batch_mean` | `ComputationDataHandle` | 1 dimensional array (\\(\mu\\))      |
-| `batch_var`  | `ComputationDataHandle` | 1 dimensional array (\\(\sigma^2\\)) |
+| `output`     | `ComputationDataHandle` | n 维数组，维度形状与输入 `operand` (y) 一样  |
+| `batch_mean` | `ComputationDataHandle` | 1 维数组 (\\(\mu\\))      |
+| `batch_var`  | `ComputationDataHandle` | 1 维数组 (\\(\sigma^2\\)) |
 
-The `batch_mean` and `batch_var` are moments calculated across the batch and
-spatial dimensions using the formulars above.
+`batch_mean` 和 `batch_var` 是该批次的多个空间维度上用上述公式计算出来的统计矩（moment）。
 
 ## BatchNormInference
 
-See also
-[`ComputationBuilder::BatchNormInference`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::BatchNormInference`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
-<b> Warning: Not implemented yet. </b>
+<b> 警告：尚未实现 </b>
 
-Normalizes an array across batch and spatial dimensions.
+在一个批次的多个空间维度上对一个数组进行标准化。
 
 <b> `BatchNormInference(operand, scale, offset, mean, variance, epsilon, feature_index)` </b>
 
-| Arguments       | Type                    | Semantics                       |
+| 参数 | 类型 | 语义                                     |
 | --------------  | ----------------------- | ------------------------------- |
-| `operand`       | `ComputationDataHandle` | n dimensional array to be       |
-:                 :                         : normalized                      :
-| `scale`         | `ComputationDataHandle` | 1 dimensional array             |
-| `offset`        | `ComputationDataHandle` | 1 dimensional array             |
-| `mean`          | `ComputationDataHandle` | 1 dimensional array             |
-| `variance`      | `ComputationDataHandle` | 1 dimensional array             |
-| `epsilon`       | `float`                 | Epsilon value                   |
-| `feature_index` | `int64`                 | Index to feature dimension in   |
-:                 :                         : `operand`                       :
+| `operand`       | `ComputationDataHandle` | 待标准化的 n 维数组 to be       |
+| `scale`         | `ComputationDataHandle` | 1 维数组             |
+| `offset`        | `ComputationDataHandle` | 1 维数组             |
+| `mean`          | `ComputationDataHandle` | 1 维数组             |
+| `variance`      | `ComputationDataHandle` | 1 维数组             |
+| `epsilon`       | `float`                 | Epsilon 值 |
+| `feature_index` | `int64`                 | 在 `operand` 中的特征维度的索引    |
 
-For each feature in the feature dimension (`feature_index` is the index for the
-feature dimension in `operand`), the operation calculates the mean and variance
-across all the other dimensions and use the mean and variance to normalize each
-element in `operand`. If an invalid `feature_index` is passed, an error is
-produced.
+对于特征维度中的每个特征（`feature_index` 为 `operand` 中的特征维度的索引），此操作会计算出关于其它所有维度的数据的均值和方差，然后用这个均值和方差对 `operand` 中的每个元素进行标准化。如果一个非法的 `feature_index` 传入了，则会产生一个错误。
 
-`BatchNormInference`  is equivalent to calling `BatchNormTraining` without
-computing `mean` and `variance` for each batch. It uses the input `mean` and
-`variance` instead as estimated values. The purpose of this op is to reduce
-latency in inference, hence the name `BatchNormInference`.
+`BatchNormInference` 等价于对每个批次不计算均值和方差而调用 `BatchNormTraining`，它使用的是输入的均值 `mean` 和方差 `variance`，而非估计值。这个操作的目的是减少推断时的延迟，因而得名 `BatchNormInference`。
 
-The output is a n dimensional, normalized array with the same shape as input
+输出是一个 n 维标准化过的数组，维度形状与输入 `operand` 一致。
 `operand`.
 
 ## BatchNormGrad
 
-See also
-[`ComputationBuilder::BatchNormGrad`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::BatchNormGrad`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
-<b> Warning: Not implemented yet. </b>
+<b> 警告：尚未实现 </b>
 
-Calculates gradients of batch norm.
+计算批次标准化的梯度。
 
 <b> `BatchNormGrad(operand, scale, mean, variance, grad_output, epsilon, feature_index)` </b>
 
-| Arguments       | Type                    | Semantics                        |
+| 参数 | 类型 | 语义                                     |
 | --------------  | ----------------------- | -------------------------------- |
-| `operand`       | `ComputationDataHandle` | n dimensional array to be        |
-:                 :                         : normalized (x)                   :
-| `scale`         | `ComputationDataHandle` | 1 dimensional array              |
-:                 :                         : (\\(\gamma\\))                   :
-| `mean`          | `ComputationDataHandle` | 1 dimensional array (\\(\mu\\))  |
-| `variance`      | `ComputationDataHandle` | 1 dimensional array              |
-:                 :                         : (\\(\sigma^2\\))                 :
-| `grad_output`   | `ComputationDataHandle` | Gradients passed to              |
-:                 :                         : `BatchNormTraining`              :
-:                 :                         : (\\( \nabla y\\))                :
-| `epsilon`       | `float`                 | Epsilon value (\\(\epsilon\\))   |
-| `feature_index` | `int64`                 | Index to feature dimension in    |
-:                 :                         : `operand`                        :
+| `operand`       | `ComputationDataHandle` | 待标准化的 n 维数组 (x)     |
+| `scale`         | `ComputationDataHandle` | 1 维数组 (\\(\gamma\\))       |
+| `mean`          | `ComputationDataHandle` | 1 维数组 (\\(\mu\\))  |
+| `variance`      | `ComputationDataHandle` | 1 维数组 (\\(\sigma^2\\))          |
+| `grad_output`   | `ComputationDataHandle` | 传入到 `BatchNormTraining` 的梯度 (\\( \nabla y\\)) |
+| `epsilon`       | `float`                 | Epsilon 值 (\\(\epsilon\\))   |
+| `feature_index` | `int64`                 | `operand` 中的特征维度的索引  |
 
-For each feature in the feature dimension (`feature_index` is the index for the
-feature dimension in `operand`), the operation calculates the gradients with
-respect to `operand`, `offset` and `scale` across all the other dimensions. If
-an invalid `feature_index` is passed, an error is produced.
+对于特征维度中的每个特征 (`feature_index` 为 `operand` 中的特征维度的索引），此操作计算出其它所有维度的关于 `operand`、`offset` 和 `scale` 的梯度。如果传入一个非法的 `feature_index`，则会产生一个错误。
 
-The three gradients are defined by the following formulas:
+这三个梯度由下列公式来定义：
 
 \\( \nabla x = \nabla y * \gamma * \sqrt{\sigma^2+\epsilon} \\)
 
@@ -642,63 +544,47 @@ The three gradients are defined by the following formulas:
 
 \\( \nabla \beta = sum(\nabla y) \\)
 
-The inputs `mean` and `variance` represents moments value
-across batch and spatial dimensions.
+输入的均值和方差表示对于一个批次和多个空间维度的统计矩。
 
-The output type is a tuple of three ComputationDataHandles:
+输出类型是 ComputationDataHandle 的三元组：
 
-|Outputs       | Type                    | Semantics                           |
+| 输出 | 类型 | 语义 |
 |------------- | ----------------------- | ------------------------------------|
-|`grad_operand`| `ComputationDataHandle` | gradient with respect to input      |
-:              :                         : `operand`                           :
-|`grad_offset` | `ComputationDataHandle` | gradient with respect to input      |
-:              :                         : `offset`                            :
-|`grad_scale`  | `ComputationDataHandle` | gradient with respect to input      |
-:              :                         : `scale`                             :
+|`grad_operand`| `ComputationDataHandle` | 关于输入 `operand` 的梯度   |
+|`grad_offset` | `ComputationDataHandle` | 关于输入 `offset` 的梯度    |
+|`grad_scale`  | `ComputationDataHandle` | 关于输入 `scale` 的梯度    |
 
 
 ## GetTupleElement
 
-See also
-[`ComputationBuilder::GetTupleElement`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::GetTupleElement`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
-Indexes into a tuple with a compile-time-constant value.
+对编译时常量的元组，该操作能提供索引的功能。
 
-The value must be a compile-time-constant so that shape inference can determine
-the type of the resulting value.
+输入值必须是编译时常量值，这样才可以通过形状推理获得结果值的类型。
 
-This is analogous to `std::get<int N>(t)` in C++. Conceptually:
+概念上，这类似于 C++ 中的 `std::get<int N>(t)`：
 
 ```
 let v: f32[10] = f32[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 let s: s32 = 5;
 let t: (f32[10], s32) = tuple(v, s);
-let element_1: s32 = gettupleelement(t, 1);  // Inferred shape matches s32.
+let element_1: s32 = gettupleelement(t, 1);  // 推断出的形状匹配 s32.
 ```
 
-See also @{tf.tuple}.
+另见 @{tf.tuple}。
 
 ## Infeed
 
-See also
-[`ComputationBuilder::Infeed`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::Infeed`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
 
 <b> `Infeed(shape)` </b>
 
-| Argument | Type    | Semantics                                             |
+| 参数 | 类型 | 语义                                              |
 | -------- | ------- | ----------------------------------------------------- |
-| `shape`  | `Shape` | Shape of the data read from the Infeed interface. The |
-:          :         : layout field of the shape must be set to match the    :
-:          :         : layout of the data sent to the device; otherwise its  :
-:          :         : behavior is undefined.                                :
+| `shape`  | `Shape` | 从 Infeed 界面读得的数据的维度形状。此形状的数据布局必须与发送到设备上的数据相匹配；否则此行为是未定义的 |
 
-Reads a single data item from the implicit Infeed streaming interface of the
-device, interpreting the data as the given shape and its layout, and returns a
-`ComputationDataHandle` of the data. Multiple Infeed operations are allowed in a
-computation, but there must be a total order among the Infeed operations. For
-example, two Infeeds in the code below have a total order since there is a
-dependency between the while loops. The compiler issues an error if there isn't
-a total order.
+从设备的隐式 Infeed 流界面读取单个数据项，根据给定的形状和布局来进行解析，并返回一个此数据的一个 `ComputationDataHandle`。在一个计算中允许有多个 Infeed 操作，但这些 Infeed 操作之间必须有全序。比如，下面代码中两个 Infeed 是有全序的，因为在不同 while 循环之间有依赖关系。如果没有全序，编译器会产生一个错误。
 
 ```
 result1 = while (condition, init = init_value) {
@@ -710,13 +596,10 @@ result2 = while (condition, init = result1) {
 }
 ```
 
-Nested tuple shapes are not supported. For an empty tuple shape, the Infeed
-operation is effectively a nop and proceeds without reading any data from the
-Infeed of the device.
+嵌套的元组形状是不支持的。对于一个空的元组形状，Infeed 操作直接是一个 nop，因而不会从设备的 Infeed 中读取任何数据。
 
-> Note: We plan to allow multiple Infeed operations without a total order, in
-> which case the compiler will provide information about how the Infeed
-> operations are serialized in the compiled program.
+> 注意：我们计划支持没有全序的多个 Infeed 操作，在这种情况下，编译器将提供信息，确定这些 Infeed 操作在编译后的程序中如何串行化。
+
 
 ## Map
 
