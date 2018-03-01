@@ -601,77 +601,46 @@ result2 = while (condition, init = result1) {
 > 注意：我们计划支持没有全序的多个 Infeed 操作，在这种情况下，编译器将提供信息，确定这些 Infeed 操作在编译后的程序中如何串行化。
 
 
-## Map
+## 映射（Map）
 
-See also
-[`ComputationBuilder::Map`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::Map`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
 <b> `Map(operands..., computation)` </b>
 
-| Arguments         | Type                     | Semantics                     |
+| 参数 | 类型 | 语义                      |
 | ----------------- | ------------------------ | ----------------------------- |
-| `operands`        | sequence of N            | N arrays of types T_0..T_{N-1}|
-:                   : `ComputationDataHandle`s :                               :
-| `computation`     | `Computation`            | computation of type `T_0,     |
-:                   :                          : T_1, ..., T_{N + M -1} -> S`  :
-:                   :                          : with N parameters of type T   :
-:                   :                          : and M of arbitrary type       :
-| `dimensions`       | `int64` array           | array of map dimensions    |
-| `static_operands` | sequence of M            | M arrays of arbitrary type    |
-:                   : `ComputationDataHandle`s :                               :
+| `operands`        | N 个 `ComputationDataHandle` 的序列 | 类型为 T_0..T_{N-1} 的 N 个数组 |
+| `computation`     | `Computation`            | 类型为`T_0, T_1, ..., T_{N + M -1} -> S` 的计算，有 N 个类型为 T 的参数，和 M 个任意类型的参数 |
+| `dimensions`       | `int64` array           | 映射维度的数组  |
+| `static_operands` | M 个 `ComputationDataHandle` 的序列  | 任意类型的 M 个数组  |
 
-Applies a scalar function over the given `operands` arrays, producing an array
-of the same dimensions where each element is the result of the mapped function
-applied to the corresponding elements in the input arrays with `static_operands`
-given as additional input to `computation`.
+将一个标量函数作用于给定的 `operands` 数组，可产生相同维度的数组，其中每个元素都是映射函数（mapped function）作用于相应输入数组中相应元素的结果，而 `static_operands` 是 `computation` 的额外输入。
 
-The mapped function is an arbitrary computation with the restriction that it has
-N inputs of scalar type `T` and a single output with type `S`. The output has
-the same dimensions as the operands except that the element type T is replaced
-with S.
+此映射函数可以是任意计算过程，只不过它必须有 N 类类型为 `T` 的标量参数，和类型为 `S` 的输出。输出的维度与输入 `operands` 相同，只不过元素类型 T 换成了 S。
 
-For example: `Map(op1, op2, op3, computation, par1)` maps `elem_out <-
-computation(elem1, elem2, elem3, par1)` at each (multi-dimensional) index in the
-input arrays to produce the output array.
+比如，`Map(op1, op2, op3, computation, par1)` 用 `elem_out <-
+computation(elem1, elem2, elem3, par1)` 将输入数组中的每个（多维）指标映射产生输出数组。
 
-## Pad
+## 填充（Pad）
 
-See also
-[`ComputationBuilder::Pad`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::Pad`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
 <b> `Pad(operand, padding_value, padding_config)` </b>
 
-| Arguments        | Type                    | Semantics                     |
+| 参数 | 类型 | 语义                      |
 | ---------------- | ----------------------- | ----------------------------- |
-| `operand`        | `ComputationDataHandle` | array of type `T`             |
-| `padding_value`  | `ComputationDataHandle` | scalar of type `T` to fill in |
-:                  :                         : the added padding             :
-| `padding_config` | `PaddingConfig`         | padding amount on both edges  |
-:                  :                         : (low, high) and between the   :
-:                  :                         : elements of each dimension    :
+| `operand`        | `ComputationDataHandle` | 类型为 `T` 的标量的数组 |
+| `padding_value`  | `ComputationDataHandle` | 类型为 `T` 的标量，用于填充 |
+| `padding_config` | `PaddingConfig`         | 每个维度的两端的填充量 (low, high) |
 
-Expands the given `operand` array by padding around the array as well as between
-the elements of the array with the given `padding_value`. `padding_config`
-specifies the amount of edge padding and the interior padding for each
-dimension.
+通过在数组周围和数组之间进行填充，可以将给定的 `operand` 数组扩大，其中 `padding_value` 和 `padding_config` 用于配置每个维度的边缘填充和内部填充的数目。
 
-`PaddingConfig` is a repeated field of `PaddingConfigDimension`, which contains
-three fields for each dimension: `edge_padding_low`, `edge_padding_high`, and
-`interior_padding`. `edge_padding_low` and `edge_padding_high` specifies the
-amount of padding added at the low-end (next to index 0) and the high-end (next
-to the highest index) of each dimension respectively. The amount of edge padding
-can be negative -- the absolute value of negative padding indicates the number
-of elements to remove from the specified dimension. `interior_padding` specifies
-the amount of padding added between any two elements in each dimension. Interior
-padding occurs logically before edge padding, so in the case of negative edge
-padding elements are removed from the interior-padded operand. This operation is
-a no-op if the edge padding pairs are all (0, 0) and the interior padding values
-are all 0. Figure below shows examples of different `edge_padding` and
-`interior_padding` values for a two dimensional array.
+`PaddingConfig` 是 `PaddingConfigDimension` 的一个重复字段，它对于每个维度都包含有三个字段：`edge_padding_low`, `edge_padding_high` 和 `interior_padding`。`edge_padding_low` 和 `edge_padding_high` 分别指定了该维度上低端（指标为 0 那端）和高端（最高指标那端）上的填充数目。边缘填充数目可以是负值 -- 负的填充数目的绝对值表示从指定维度移除元素的数目。`interior_padding` 指定了在每个维度的任意两个相邻元素之间的填充数目。逻辑上，内部填充应发生在边缘填充之前，所有在负边缘填充时，会从经过内部填充的操作数之上再移除边缘元素。如果边缘填充配置为 (0, 0)，且内部填充值都是 0，则此操作是一个 no-op。下图展示的是二维数组上不同 `edge_padding` 和 `interior_padding` 值的示例。
 
 <div style="width:95%; margin:auto; margin-bottom:10px; margin-top:20px;">
   <img style="width:100%" src="https://www.tensorflow.org/images/ops_pad.png">
 </div>
+
 
 ## Reduce
 
