@@ -642,54 +642,37 @@ computation(elem1, elem2, elem3, par1)` 将输入数组中的每个（多维）�
 </div>
 
 
-## Reduce
+## 归约（Reduce）
 
-See also
-[`ComputationBuilder::Reduce`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::Reduce`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
-Applies a reduction function to an array.
+将一个归约函数作用于一个数组。
 
 <b> `Reduce(operand, init_value, computation, dimensions)` </b>
 
-| Arguments     | Type                    | Semantics                        |
+| 参数 | 类型 | 语义                        |
 | ------------- | ----------------------- | -------------------------------- |
-| `operand`     | `ComputationDataHandle` | array of type `T`                |
-| `init_value`  | `ComputationDataHandle` | scalar of type `T`               |
-| `computation` | `Computation`           | computation of type `T, T -> T`  |
-| `dimensions`  | `int64` array           | unordered array of dimensions to |
-:               :                         : reduce                           :
+| `operand`     | `ComputationDataHandle` | 类型为 `T` 的数组            |
+| `init_value`  | `ComputationDataHandle` | 类型为 `T` 的标量        |
+| `computation` | `Computation`           | 类型为 `T, T -> T`的计算  |
+| `dimensions`  | `int64` 数组 | 待归约的未排序的维度数组 |
 
-Conceptually, this operation reduces one or more dimensions in the input array
-into scalars. The rank of the result array is `rank(operand) - len(dimensions)`.
-`init_value` is the initial value used for every reduction and may also be
-inserted anywhere during computation if the back-end chooses to do so. So in
-most cases `init_value` should be an identity of the reduction function (for
-example, 0 for addition).
+概念上看，此操作将输入数组中的一个或多个数组归约为标量。结果数组的秩为 `rank(operand) - len(dimensions)`。 `init_value` 是用于每次归约的初值，如果后端有需求也可以在计算中插入到任何地方。所以，在大多数情况下，`init_value` 应该为归约函数的一个单位元（比如，加法中的 0）。
 
-The evaluation order of the reduction function is arbitrary and may be
-non-deterministic. Therefore, the reduction function should not be overly
-sensitive to reassociation.
+归约函数的执行顺序是任意的，即可能是非确定的。因而，约化函数不应该对运算的结合性敏感。
 
-Some reduction functions like addition are not strictly associative for floats.
-However, if the range of the data is limited, floating-point addition is close
-enough to being associative for most practical uses. It is possible to conceive
-of some completely non-associative reductions, however, and these will produce
-incorrect or unpredictable results in XLA reductions.
+有些归约函数，比如加法，对于浮点数并没有严格遵守结合率。不过，如果对数据的值域进行限制，大多数实际情况中，浮点加法已经足够满足结合率。当然，我们也可以构造出完全不遵守结合率的归约函数，这时，XLA 归约就会产生不正确或不可预测的结果。
 
-As an example, when reducing across the one dimension in a 1D array with values
-[10, 11, 12, 13], with reduction function `f` (this is `computation`) then that
-could be computed as
+下面是一个示例，对 1D 数组 [10, 11, 12, 13] 进行归约，归约函数为 `f` （即参数 `computation`），则计算结果为：
 
 `f(10, f(11, f(12, f(init_value, 13)))`
 
-but there are also many other possibilities, e.g.
+但它还有其它很多种可能性，比如：
 
 `f(init_value, f(f(10, f(init_value, 11)), f(f(init_value, 12), f(13,
 init_value))))`
 
-The following is a rough pseudo-code example of how reduction could be
-implemented, using summation as the reduction computation with an initial value
-of 0.
+下面是一段实现归约的伪代码，归约计算为求和，初值为 0。
 
 ```python
 result_shape <- remove all dims in dimensions from operand_shape
