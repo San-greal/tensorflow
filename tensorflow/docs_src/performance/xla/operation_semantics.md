@@ -642,7 +642,7 @@ computation(elem1, elem2, elem3, par1)` 将输入数组中的每个（多维）�
 </div>
 
 
-## 归约（Reduce）
+## Reduce
 
 另请参阅 [`ComputationBuilder::Reduce`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
@@ -657,7 +657,7 @@ computation(elem1, elem2, elem3, par1)` 将输入数组中的每个（多维）�
 | `computation` | `Computation`           | 类型为 `T, T -> T`的计算  |
 | `dimensions`  | `int64` 数组 | 待归约的未排序的维度数组 |
 
-概念上看，此操作将输入数组中的一个或多个数组归约为标量。结果数组的秩为 `rank(operand) - len(dimensions)`。 `init_value` 是用于每次归约的初值，如果后端有需求也可以在计算中插入到任何地方。所以，在大多数情况下，`init_value` 应该为归约函数的一个单位元（比如，加法中的 0）。
+概念上看，归约（Reduce）操作将输入数组中的一个或多个数组归约为标量。结果数组的秩为 `rank(operand) - len(dimensions)`。 `init_value` 是用于每次归约的初值，如果后端有需求也可以在计算中插入到任何地方。所以，在大多数情况下，`init_value` 应该为归约函数的一个单位元（比如，加法中的 0）。
 
 归约函数的执行顺序是任意的，即可能是非确定的。因而，约化函数不应该对运算的结合性敏感。
 
@@ -675,58 +675,49 @@ init_value))))`
 下面是一段实现归约的伪代码，归约计算为求和，初值为 0。
 
 ```python
-result_shape <- remove all dims in dimensions from operand_shape
+result_shape <- 从 operand_shape 的维度中移除所有待归约的维度
 
-# Iterate over all elements in result_shape. The number of r's here is equal
-# to the rank of the result
+# 遍历 result_shape 中的所有元素，这里，r 的数目等于 result 的秩
 for r0 in range(result_shape[0]), r1 in range(result_shape[1]), ...:
-  # Initialize this result element
+  # 初始化 result 的元素
   result[r0, r1...] <- 0
 
-  # Iterate over all the reduction dimensions
+  # 遍历所有的归约维度
   for d0 in range(dimensions[0]), d1 in range(dimensions[1]), ...:
-    # Increment the result element with the value of the operand's element.
-    # The index of the operand's element is constructed from all ri's and di's
-    # in the right order (by construction ri's and di's together index over the
-    # whole operand shape).
+    # 用 operand 的元素的值来增加 result 中的元素的值
+    # operand 的元素的索引由所有的 ri 和 di 按正确的顺序构造而来
+    # （构造得到的索引用来访问 operand 的整个形状）
     result[r0, r1...] += operand[ri... di]
 ```
 
-Here's an example of reducing a 2D array (matrix). The shape has rank 2,
-dimension 0 of size 2 and dimension 1 of size 3:
+下面是一个对 2D 数组（矩阵）进行归约的示例。其形状的秩为 2，0 维大小为 2，1 维大小为 3：
 
 <div style="width:95%; margin:auto; margin-bottom:10px; margin-top:20px;">
   <img style="width:35%" src="https://www.tensorflow.org/images/ops_2d_matrix.png">
 </div>
 
-Results of reducing dimensions 0 or 1 with an "add" function:
+对 0 维或 1 维进行求和归约：
 
 <div style="width:95%; margin:auto; margin-bottom:10px; margin-top:20px;">
   <img style="width:35%" src="https://www.tensorflow.org/images/ops_reduce_from_2d_matrix.png">
 </div>
 
-Note that both reduction results are 1D arrays. The diagram shows one as column
-and another as row just for visual convenience.
+注意，两个归约结果都是一维数组。图中将一个显示为行，另一个显示为列，但这只是为了可视化效果。
 
-For a more complex example, here is a 3D array. Its rank is 3, dimension 0 of
-size 4, dimension 1 of size 2 and dimension 2 of size 3. For simplicity, the
-values 1 to 6 are replicated across dimension 0.
+下面是一个更复杂的 3D 数组的例子。它的秩为 3 ，形状为 (4,2,3)。为简单起见，我们让 1 到 6 这几个数字沿 0 维复制 4 份。
 
 <div style="width:95%; margin:auto; margin-bottom:10px; margin-top:20px;">
   <img style="width:35%" src="https://www.tensorflow.org/images/ops_reduce_from_3d_matrix.png">
 </div>
 
-Similarly to the 2D example, we can reduce just one dimension. If we reduce
-dimension 0, for example, we get a rank-2 array where all values across
-dimension 0 were folded into a scalar:
+类似于二维的情况，我们可以只归约一个维度。如果我们归约第 0 维，我们得到一个二阶数组，它沿第 0 维的所有值会合并为一个标量：
 
 ```text
 |  4   8  12 |
 | 16  20  24 |
 ```
 
-If we reduce dimension 2, we also get a rank-2 array where all values across
-dimension 2 were folded into a scalar:
+如果我们归约第 2 维，结果仍然是一个二阶数组，沿第 2 维的所有值合并为一个标量：
 
 ```text
 | 6  15 |
@@ -735,89 +726,53 @@ dimension 2 were folded into a scalar:
 | 6  15 |
 ```
 
-Note that the relative order between the remaining dimensions in the input is
-preserved in the output, but some dimensions may get assigned new numbers (since
-the rank changes).
+注意，输出中剩下的维度的顺序与它们在输入中的相对顺序保持一致，只不过维度的名称（数字）会发生变化，因为数组的秩发生了变化。
 
-We can also reduce multiple dimensions. Add-reducing dimensions 0 and 1 produces
-the 1D array `| 20 28 36 |`.
+我们也可以归约多个维度。对 0 维和 1 维进行求和归约，将得到一个一维数组 `| 20 28 36 |`。
 
-Reducing the 3D array over all its dimensions produces the scalar `84`.
+对这个三维数组的所有元素进行求和归约，得到一个标量 `84`。
 
 ## ReducePrecision
 
-See also
-[`ComputationBuilder::ReducePrecision`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::ReducePrecision`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
-Models the effect of converting floating-point values to a lower-precision
-format (such as IEEE-FP16) and back to the original format.  The number of
-exponent and mantissa bits in the lower-precision format can be specified
-arbitrarily, although all bit sizes may not be supported on all hardware
-implementations.
+当浮点数转换为低精度格式（比如 IEEE-FP16）然后转换回原格式时，值可能会发生变化，ReducePrecision 对这种变化进行建模。低精度格式中的指数（exponent）和尾数（mantissa）的比特数目是可以任意指定的，不过不是所有硬件实现都支持所有的比特数设置。
 
 <b> `ReducePrecision(operand, mantissa_bits, exponent_bits)` </b>
 
-| Arguments           | Type                    | Semantics                    |
+| 参数 | 类型 | 语义                    |
 | ------------------- | ----------------------- | ---------------------------- |
-| `operand`           | `ComputationDataHandle` | array of floating-point type |
-:                     :                         : `T`.                         :
-| `exponent_bits`     | `int32`                 | number of exponent bits in   |
-:                     :                         : lower-precision format       :
-| `mantissa_bits`     | `int32`                 | number of mantissa bits in   |
-:                     :                         : lower-precision format       :
+| `operand`           | `ComputationDataHandle` | 浮点类型 `T` 的数组 |
+| `exponent_bits`     | `int32`                 | 低精度格式中的指数比特数目 |
+| `mantissa_bits`     | `int32`                 | 低精度格式中的尾数比特数目 |
 
-The result is an array of type `T`.  The input values are rounded to the nearest
-value representable with the given number of mantissa bits (using "ties to even"
-semantics), and any values that exceed the range specified by the number of
-exponent bits are clamped to positive or negative infinity.  `NaN` values are
-retained, although they may be converted to canonical `NaN` values.
+结果为类型为 `T` 的数组。输入值被舍入至与给定尾数比特的数字最接近的那个值（采用的是"偶数优先"原则）。而超过指数比特所允许的值域时，输入值会被视为正无穷或负无穷。`NaN` 值会保留，不过它可能会被转换为规范化的 NaN 值。
 
-The lower-precision format must have at least one exponent bit (in order to
-distinguish a zero value from an infinity, since both have a zero mantissa), and
-must have a non-negative number of mantissa bits.  The number of exponent or
-mantissa bits may exceed the corresponding value for type `T`; the corresponding
-portion of the conversion is then simply a no-op.
+低精度格式必须至少有一个指数比特（为了区分零和无穷，因为两者的尾数比特数都为零），且尾数比特数必须是非负的。指数或尾数的比特数目可能会超过类型 `T`；这种情况下，相应部分的转换就仅仅是一个 no-op 了。
 
 
 ## ReduceWindow
 
-See also
-[`ComputationBuilder::ReduceWindow`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::ReduceWindow`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
-Applies a reduction function to all elements in each window of the input
-multi-dimensional array, producing an output multi-dimensional array with the
-same number of elements as the number of valid positions of the window. A
-pooling layer can be expressed as a `ReduceWindow`.
+将一个归约函数应用于输入多维数组的每个窗口内的所有元素上，输出一个多维数组，其元素个数等于合法窗口的位置数目。一个池化层可以表示为一个 `ReduceWindow`。
 
 <b> `ReduceWindow(operand, init_value, computation, window_dimensions,
 window_strides, padding)` </b>
 
-| Arguments           | Type                    | Semantics                    |
+| 参数 | 类型 | 语义                    |
 | ------------------- | ----------------------- | ---------------------------- |
-| `operand`           | `ComputationDataHandle` | N dimensional array          |
-:                     :                         : containing elements of type  :
-:                     :                         : T. This is the base area on  :
-:                     :                         : which the window is placed.  :
-| `init_value`        | `ComputationDataHandle` | Starting value for the       |
-:                     :                         : reduction. See [Reduce]      :
-:                     :                         : (#reduce) for details.       :
-| `computation`       | `Computation`           | Reduction function of type   |
-:                     :                         : `T, T -> T`, to apply to all :
-:                     :                         : elements in each window      :
-| `window_dimensions` | `ArraySlice<int64>`     | array of integers for window |
-:                     :                         : dimension values             :
-| `window_strides`    | `ArraySlice<int64>`     | array of integers for window |
-:                     :                         : stride values                :
-| `padding`           | `Padding`               | padding type for window      |
-:                     :                         : (Padding\:\:kSame or         :
-:                     :                         : Padding\:\:kValid)           :
+| `operand`           | `ComputationDataHandle` | 类型为 T 的 N 维数组。这是窗口放置的底空间区域  |
+| `init_value`        | `ComputationDataHandle` | 归约的初始值。细节请参见 [规约](#reduce)。 |
+| `computation`       | `Computation`           | 类型为 `T, T -> T`的归约函数，应用于每个窗口内的所有元素  |
+| `window_dimensions` | `ArraySlice<int64>`     | 表示窗口维度值的整数数组  |
+| `window_strides`    | `ArraySlice<int64>`     | 表示窗口步长值的整数数组 |
+| `padding`           | `Padding`               | 窗口的边缘填充类型（Padding\:\:kSame 或 Padding\:\:kValid） |
 
-Below code and figure shows an example of using `ReduceWindow`. Input is a
-matrix of size [4x6] and both window_dimensions and window_stride_dimensions are
-[2x3].
+下列代码和图为一个使用 `ReduceWindow` 的示例。输入是一个大小为 [4x6] 的矩阵，window_dimensions 和 window_stride_dimensions 都是 [2x3]。
 
 ```
-// Create a computation for the reduction (maximum).
+// 创建一个归约计算（求最大值）
 Computation max;
 {
   ComputationBuilder builder(client_, "max");
@@ -827,7 +782,7 @@ Computation max;
   max = builder.Build().ConsumeValueOrDie();
 }
 
-// Create a ReduceWindow computation with the max reduction computation.
+// 用最大值归约计算来创建一个 ReduceWindow 计算
 ComputationBuilder builder(client_, "reduce_window_2x3");
 auto shape = ShapeUtil::MakeShape(F32, {4, 6});
 auto input = builder.Parameter(0, shape, "input");
@@ -843,22 +798,13 @@ builder.ReduceWindow(
   <img style="width:35%" src="https://www.tensorflow.org/images/ops_reduce_window.png">
 </div>
 
-Stride of 1 in a dimension specifies that the position of a window in the
-dimension is 1 element away from its adjacent window. In order to specify that
-no windows overlap with each other, window_stride_dimensions should be equal to
-window_dimensions. The figure below illustrates the use of two different stride
-values. Padding is applied to each dimension of the input and the calculations
-are the same as though the input came in with the dimensions it has after
-padding.
+在一个维度上步长为 1 表示在此维度上两个相邻窗口间隔一个元素，为了让窗口互相不重叠，window_stride_dimensions 和 window_dimensions 应该要相等。下图给出了两种不同步长设置的效果。边缘填充应用于输入的每个维度，计算过程实际发生在填充之后的数组上。
 
 <div style="width:95%; margin:auto; margin-bottom:10px; margin-top:20px;">
   <img style="width:75%" src="https://www.tensorflow.org/images/ops_reduce_window_stride.png">
 </div>
 
-The evaluation order of the reduction function is arbitrary and may be
-non-deterministic. Therefore, the reduction function should not be overly
-sensitive to reassociation. See the discussion about associativity in the
-context of [`Reduce`](#reduce) for more details.
+归约函数的执行顺序是任意的，因而结果可能是非确定性的。所以，归约函数应该不能对计算的结合性太过敏感。更多细节，参见 [`Reduce`](#reduce) 关于结合性的讨论。
 
 ## Reshape
 
