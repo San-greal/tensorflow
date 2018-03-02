@@ -808,38 +808,23 @@ builder.ReduceWindow(
 
 ## Reshape
 
-See also
-[`ComputationBuilder::Reshape`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)
-and the [`Collapse`](#collapse) operation.
+另请参阅 [`ComputationBuilder::Reshape`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h) 和 [`Collapse`](#collapse) 操作。
 
-Reshapes the dimensions of an array into a new configuration.
+变形操作（reshape）是将一个数组的维度变成另外一种维度设置。
 
 <b> `Reshape(operand, new_sizes)` </b>
 <b> `Reshape(operand, dimensions, new_sizes)` </b>
 
-Arguments    | Type                    | Semantics
+参数 | 类型 | 语义
 ------------ | ----------------------- | ---------------------------------------
-`operand`    | `ComputationDataHandle` | array of type T
-`dimensions` | `int64` vector          | order in which dimensions are collapsed
-`new_sizes`  | `int64` vector          | vector of sizes of new dimensions
+`operand`    | `ComputationDataHandle` | 类型为 T 的数组
+`dimensions` | `int64` vector          | 维度折叠的顺序
+`new_sizes`  | `int64` vector          | 新维度大小的矢量
 
-Conceptually, reshape first flattens an array into a one-dimensional vector of
-data values, and then refines this vector into a new shape. The input arguments
-are an arbitrary array of type T, a compile-time-constant vector of dimension
-indices, and a compile-time-constant vector of dimension sizes for the result.
-The values in the `dimension` vector, if given, must be a permutation of all of
-T's dimensions; the default if not given is `{0, ..., rank - 1}`. The order of
-the dimensions in `dimensions` is from slowest-varying dimension (most major) to
-fastest-varying dimension (most minor) in the loop nest which collapses the
-input array into a single dimension. The `new_sizes` vector determines the size
-of the output array. The value at index 0 in `new_sizes` is the size of
-dimension 0, the value at index 1 is the size of dimension 1, and so on. The
-product of the `new_size` dimensions must equal the product of the operand's
-dimension sizes. When refining the collapsed array into the multidimensional
-array defined by `new_sizes`, the dimensions in `new_sizes` are ordered from
-slowest varying (most major) and to fastest varying (most minor).
+从概念上看，变形操作首先将一个数组拉平为一个一维矢量，然后将此矢量展开为一个新的形状。输入参数是一个类型为 T 的任意数组，一个编译时常量的维度指标数组，以及表示结果维度大小的一个编译时常量的数组。
+如果给出了 `dimensions` 参数，这个矢量中的值必须是 T 的所有维度的一个置换，其默认值为 `{0, ..., rank - 1}`。`dimensions` 中的维度的顺序是从最慢变化维（最主序）到最快变化维（最次序），按照这个顺序依次将所有元素折叠到一个维度上。`new_sizes` 矢量决定了输出数组的维度大小。`new_sizes[0]` 表示第 0 维的大小，`new_sizes[1]` 表示的是第 1 维的大小，依此类推。`new_sizes` 中的维度值的乘积必须等于 operand 的维度值的乘积。将折叠的一维数组展开为由 `new_sizes` 定义的多维数组时，`new_sizes` 中的维度的顺序也是最慢变化维（最主序）到最快变化维（最次序）。
 
-For example, let v be an array of 24 elements:
+比如，令 v 为包含 24 个元素的数组：
 
 ```
 let v = f32[4x2x3] {{{10, 11, 12}, {15, 16, 17}},
@@ -847,7 +832,7 @@ let v = f32[4x2x3] {{{10, 11, 12}, {15, 16, 17}},
                     {{30, 31, 32}, {35, 36, 37}},
                     {{40, 41, 42}, {45, 46, 47}}};
 
-In-order collapse:
+依次折叠:
 let v012_24 = Reshape(v, {0,1,2}, {24});
 then v012_24 == f32[24] {10, 11, 12, 15, 16, 17, 20, 21, 22, 25, 26, 27,
                          30, 31, 32, 35, 36, 37, 40, 41, 42, 45, 46, 47};
@@ -858,7 +843,7 @@ then v012_83 == f32[8x3] {{10, 11, 12}, {15, 16, 17},
                           {30, 31, 32}, {35, 36, 37},
                           {40, 41, 42}, {45, 46, 47}};
 
-Out-of-order collapse:
+乱序折叠:
 let v021_24 = Reshape(v, {1,2,0}, {24});
 then v012_24 == f32[24]  {10, 20, 30, 40, 11, 21, 31, 41, 12, 22, 32, 42,
                           15, 25, 35, 45, 16, 26, 36, 46, 17, 27, 37, 47};
@@ -879,35 +864,27 @@ then v021_262 == f32[2x6x2] {{{10, 20}, {30, 40},
                               {17, 27}, {37, 47}}};
 ```
 
-As a special case, reshape can transform a single-element array to a scalar and
-vice versa. For example,
+作为特例，单元素数组和标量之间可以用变形操作相互转化。比如：
 
 ```
 Reshape(f32[1x1] {{5}}, {0,1}, {}) == 5;
 Reshape(5, {}, {1,1}) == f32[1x1] {{5}};
 ```
 
-## Rev (reverse)
+## Rev (倒置)
 
-See also
-[`ComputationBuilder::Rev`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::Rev`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
 <b>`Rev(operand, dimensions)`</b>
 
-Arguments    | Type                    | Semantics
+参数 | 类型 | 语义
 ------------ | ----------------------- | ---------------------
-`operand`    | `ComputationDataHandle` | array of type T
-`dimensions` | `ArraySlice<int64>`     | dimensions to reverse
+`operand`    | `ComputationDataHandle` | 类型为 T 的数组 
+`dimensions` | `ArraySlice<int64>`     | 待倒置的维度
 
-Reverses the order of elements in the `operand` array along the specified
-`dimensions`, generating an output array of the same shape. Each element of the
-operand array at a multidimensional index is stored into the output array at a
-transformed index. The multidimensional index is transformed by reversing the
-index in each dimension to be reversed (i.e., if a dimension of size N is one of
-the reversing dimensions, its index i is transformed into N - 1 - i).
+倒置操作将 `operand` 数组沿指定的维度 `dimensions` 将元素的顺序反转，产生一个形状相同的数组。operand 数组的每个元素被存储在输出数组的变换后的位置上。元素的原索引位置在每个待倒置维度上都被反转了，得到其在输出数组中的索引位置（即，如果一个大小为 N 的维度是待倒置的，则索引 i 被变换为 N-i-i）。
 
-One use for the `Rev` operation is to reverse the convolution weight array along
-the two window dimensions during the gradient computation in neural networks.
+`Rev` 操作的一个用途是在神经网络的梯度计算时沿两个窗口维度对卷积权重值进行倒置。
 
 ## RngBernoulli
 
