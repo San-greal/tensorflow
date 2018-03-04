@@ -888,171 +888,102 @@ Reshape(5, {}, {1,1}) == f32[1x1] {{5}};
 
 ## RngBernoulli
 
-See also
-[`ComputationBuilder::RngBernoulli`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::RngBernoulli`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
-Constructs an output of a given shape with random numbers generated following
-the Bernoulli distribution. The parameter needs to be a scalar valued F32
-operand while the output shape needs to have elemental type U32.
+RngBernoulli 构造一个符合 Bernoulli 随机分布的指定形状的随机数组。输入参数是一个 F32 类型的标量，和一个表示输出形状的类型为 `U32` 的数组。
 
 <b>`RngBernoulli(mean, shape)`</b>
 
-| Arguments | Type                    | Semantics                             |
+| 参数 | 类型 | 语义                             |
 | --------- | ----------------------- | ------------------------------------- |
-| `mean`    | `ComputationDataHandle` | Scalar of type F32 specifying mean of |
-:           :                         : generated numbers                     :
-| `shape`   | `Shape`                 | Output shape of type U32              |
+| `mean`    | `ComputationDataHandle` | 类型为 F32 的标量，指定生成的数的均值 |
+| `shape`   | `Shape`                 | 类型为 U32 的输出的形状 |
 
 ## RngNormal
 
-See also
-[`ComputationBuilder::RngNormal`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::RngNormal`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
-Constructs an output of a given shape with random numbers generated following
-the $$N(\mu, \sigma)$$ normal distribution. The parameters `mu` and `sigma`, and
-output shape have to have elemental type F32. The parameters furthermore have to
-be scalar valued.
+RngNormal 构造一个符合 $$(\mu, \sigma)$$ 正态随机分布的指定形状的随机数组。参数 `mu` 和 `sigma` 为 F32 类型的标量值，而输出形状为 U32 的数组。
 
 <b>`RngNormal(mean, sigma, shape)`</b>
 
-| Arguments | Type                    | Semantics                              |
+| 参数 | 类型 | 语义                              |
 | --------- | ----------------------- | -------------------------------------- |
-| `mu`      | `ComputationDataHandle` | Scalar of type F32 specifying mean of  |
-:           :                         : generated numbers                      :
-| `sigma`   | `ComputationDataHandle` | Scalar of type F32 specifying standard |
-:           :                         : deviation of generated numbers         :
-| `shape`   | `Shape`                 | Output shape of type F32               |
+| `mu`      | `ComputationDataHandle` | 类型为 F32 的标量，指定生成的数的均值  |
+| `sigma`   | `ComputationDataHandle` | 类型为 F32 的标量，指定生成的数的标准差  |
+| `shape`   | `Shape`                 | 类型为 U32 的输出的形状 |
 
 ## RngUniform
 
-See also
-[`ComputationBuilder::RngUniform`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::RngUniform`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
-Constructs an output of a given shape with random numbers generated following
-the uniform distribution over the interval $$[a,b)$$. The parameters and output
-shape may be either F32, S32 or U32, but the types have to be consistent.
-Furthermore, the parameters need to be scalar valued. If $$b <= a$$ the result
-is implementation-defined.
+RngNormal 构造一个符合区间 $$[a,b)$$ 上的均匀分布的指定形状的随机数组。参数和输出形状可以是 F32、S32 或 U32，但是类型必须是一致的。此外，参数必须是标量值。如果 $$b <= a$$，输出结果与具体的实现有关。
 
 <b>`RngUniform(a, b, shape)`</b>
 
-| Arguments | Type                    | Semantics                         |
+| 参数 | 类型 | 语义                         |
 | --------- | ----------------------- | --------------------------------- |
-| `a`       | `ComputationDataHandle` | Scalar of type T specifying lower |
-:           :                         : limit of interval                 :
-| `b`       | `ComputationDataHandle` | Scalar of type T specifying upper |
-:           :                         : limit of interval                 :
-| `shape`   | `Shape`                 | Output shape of type T            |
+| `a`       | `ComputationDataHandle` | 类型为 T 的标量，指定区间的下界 |
+| `b`       | `ComputationDataHandle` | 类型为 T 的标量，指定区间的上界 |
+| `shape`   | `Shape`                 | 类型为 T 的输出的形状 |
 
 ## SelectAndScatter
 
-See also
-[`ComputationBuilder::SelectAndScatter`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::SelectAndScatter`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
-This operation can be considered as a composite operation that first computes
-`ReduceWindow` on the `operand` array to select an element from each window, and
-then scatters the `source` array to the indices of the selected elements to
-construct an output array with the same shape as the operand array. The binary
-`select` function is used to select an element from each window by applying it
-across each window, and it is called with the property that the first
-parameter's index vector is lexicographically less than the second parameter's
-index vector. The `select` function returns `true` if the first parameter is
-selected and returns `false` if the second parameter is selected, and the
-function must hold transitivity (i.e., if `select(a, b)` and `select(b, c)` are
-`true`, then `select(a, c)` is also `true`) so that the selected element does
-not depend on the order of the elements traversed for a given window.
+这个操作可视为一个复合操作，它先在 `operand` 数组上计算 `ReduceWindow`，以从每个窗口中选择一个数，然后将 `source` 数组散布到选定元素的指标位置上，从而构造出一个与 `operand` 数组形状一样的输出数组。二元函数 `select` 用于从每个窗口中选出一个元素，当调用此函数时，第一个参数的指标矢量的字典序小于第二个参数的指标矢量。如果第一个参数被选中，则 `select` 返回 `true`，如果第二个参数被选中，则返回 `false`。而且该函数必须满足传递性，即如果 `select(a, b)` 和 `select(b, c)` 都为 `true`，则 `select(a, c)` 也为 `true`。这样，被选中的元素不依赖于指定窗口中元素访问的顺序。
 
-The function `scatter` is applied at each selected index in the output array. It
-takes two scalar parameters:
+`scatter` 函数作用在输出数组的每个选中的指标上。它有两个标量参数：
 
-1.  Current value at the selected index in the output array
-2.  The scatter value from `source` that applies to the selected index
+1. 输出数组中选中指标处的值
+2. `source` 中被放置到选中指标处的值
 
-It combines the two parameters and returns a scalar value that's used to update
-the value at the selected index in the output array. Initially, all indices of
-the output array are set to `init_value`.
+它根据这两个参数返回一个标量值，用于更新输出数组中选中指标处的值。最开始的时候，输出数组所有指标处的值都被设为 `init_value`。
 
-The output array has the same shape as the `operand` array and the `source`
-array must have the same shape as the result of applying a `ReduceWindow`
-operation on the `operand` array. `SelectAndScatter` can be used to
-backpropagate the gradient values for a pooling layer in a neural network.
+输出数组与 `operand` 数组的形状相同，而 `source` 数组必须与 `operand` 上应用 `ReduceWindow` 之后的形状相同。 `SelectAndScatter` 可用于神经网络池化层中梯度值的反向传播。
 
 <b>`SelectAndScatter(operand, select, window_dimensions, window_strides,
 padding, source, init_value, scatter)`</b>
 
-| Arguments           | Type                    | Semantics                    |
+| 参数 | 类型 | 语义                    |
 | ------------------- | ----------------------- | ---------------------------- |
-| `operand`           | `ComputationDataHandle` | array of type T over which   |
-:                     :                         : the windows slide            :
-| `select`            | `Computation`           | binary computation of type   |
-:                     :                         : `T, T -> PRED`, to apply to  :
-:                     :                         : all elements in each window; :
-:                     :                         : returns `true` if the first  :
-:                     :                         : parameter is selected and    :
-:                     :                         : returns `false` if the       :
-:                     :                         : second parameter is selected :
-| `window_dimensions` | `ArraySlice<int64>`     | array of integers for window |
-:                     :                         : dimension values             :
-| `window_strides`    | `ArraySlice<int64>`     | array of integers for window |
-:                     :                         : stride values                :
-| `padding`           | `Padding`               | padding type for window      |
-:                     :                         : (Padding\:\:kSame or         :
-:                     :                         : Padding\:\:kValid)           :
-| `source`            | `ComputationDataHandle` | array of type T with the     |
-:                     :                         : values to scatter            :
-| `init_value`        | `ComputationDataHandle` | scalar value of type T for   |
-:                     :                         : the initial value of the     :
-:                     :                         : output array                 :
-| `scatter`           | `Computation`           | binary computation of type   |
-:                     :                         : `T, T -> T`, to apply each   :
-:                     :                         : scatter source element with  :
-:                     :                         : its destination element      :
+| `operand`           | `ComputationDataHandle` | 类型为 T 的数组，窗口在它上面滑动 |
+| `select`            | `Computation`           | 类型为 `T, T -> PRED` 的二元计算，它被应用到每个窗口中的所有元素上；如果选中第一个元素返回 `true`，如果选中第二个元素返回 `false` |
+| `window_dimensions` | `ArraySlice<int64>`     | 表示窗口维度值的整数数组 |
+| `window_strides`    | `ArraySlice<int64>`     | 表示窗口步长值的整数数组 |
+| `padding`           | `Padding`               | 窗口边缘填充类型（Padding\:\:kSame 或 Padding\:\:kValid）|
+| `source`            | `ComputationDataHandle` | 类型为 T 的数组，它的值用于散布 |
+| `init_value`        | `ComputationDataHandle` | 类型为 T 的标量值，用于输出数组的初值 |
+| `scatter`           | `Computation`           | 类型为 `T, T -> T` 的二元计算，应用于 source 的每个元素和它的目标元素 |
 
-The figure below shows examples of using `SelectAndScatter`, with the `select`
-function computing the maximal value among its parameters. Note that when the
-windows overlap, as in the figure (2) below, an index of the `operand` array may
-be selected multiple times by different windows. In the figure, the element of
-value 9 is selected by both of the top windows (blue and red) and the binary
-addition `scatter` function produces the output element of value 8 (2 + 6).
+下图为 `SelectAndScatter` 的示例，其中 `select` 函数计算它的参数中的最大值。注意，当窗口重叠时，如图 (2) 所示，`operand` 的一个指标可能会被不同窗口多次选中。在此图中，值为 9 的元素被顶部的两个窗口（蓝色和红色）选中，从而二元加法函数 `scatter` 产生值为 8 的输出值（2+6）。
 
 <div style="width:95%; margin:auto; margin-bottom:10px; margin-top:20px;">
   <img style="width:100%"
     src="https://www.tensorflow.org/images/ops_scatter_to_selected_window_element.png">
 </div>
 
-The evaluation order of the `scatter` function is arbitrary and may be
-non-deterministic. Therefore, the `scatter` function should not be overly
-sensitive to reassociation. See the discussion about associativity in the
-context of [`Reduce`](#reduce) for more details.
+`scatter` 函数的执行顺序是任意的，因而可能会出现不确定的结果。所以，`scatter` 函数不应该对计算的结合性过于敏感。更多细节，参见 [`Reduce`](#reduce) 一节中关于结合性的讨论。
 
 ## Select
 
-See also
-[`ComputationBuilder::Select`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::Select`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
-Constructs an output array from elements of two input arrays, based on the
-values of a predicate array.
+`Select` 根据一个预测数组的值，由两个输入数组的元素构造出一个输出数组。
 
 <b> `Select(pred, on_true, on_false)` </b>
 
-Arguments  | Type                    | Semantics
+参数 | 类型 | 语义
 ---------- | ----------------------- | ------------------
-`pred`     | `ComputationDataHandle` | array of type PRED
-`on_true`  | `ComputationDataHandle` | array of type T
-`on_false` | `ComputationDataHandle` | array of type T
+`pred`     | `ComputationDataHandle` | 类型为 PRED 的数组
+`on_true`  | `ComputationDataHandle` | 类型为 T 的数组
+`on_false` | `ComputationDataHandle` | 类型为 T 的数组
 
-The arrays `on_true` and `on_false` must have the same shape. This is also the
-shape of the output array. The array `pred` must have the same dimensionality as
-`on_true` and `on_false`, with the `PRED` element type.
+`on_true` 数组和 `on_false` 数组的形状必须一样，这也是输出数组的形状。`pred` 数组的维度必须与 `on_true` 和 `on_false` 相同，元素类型应为 `PRED`。
 
-For each element `P` of `pred`, the corresponding element of the output array is
-taken from `on_true` if the value of `P` is `true`, and from `on_false` if the
-value of `P` is `false`. As a restricted form of [broadcasting]
-(broadcasting.md), `pred` can be a scalar of type `PRED`. In this case, the
-output array is taken wholly from `on_true` if `pred` is `true`, and from
-`on_false` if `pred` is `false`.
+对于 `pred` 的每个元素 `P`，若其值为 `true`，则输出数组中的相应元素取值于 `on_true`，若其值为 `false`，则取值于 `on_false`。这里还支持一种受限的 [广播]{broadcasting.md) 形式，即 `pred` 可以是类型为 `PRED` 的标量。在这种情况下，如果 `pred` 为 `true`，则输出数组完全取值于 `on_true`，如果 `pred` 为 `false`，则完全取值于 `on_false`。
 
-Example with non-scalar `pred`:
+非标量的 `pred` 示例：
 
 ```
 let pred: PRED[4] = {true, false, false, true};
@@ -1062,7 +993,7 @@ let v2: s32[4] = {100, 200, 300, 400};
 Select(pred, v1, v2) = s32[4]{1, 200, 300, 4};
 ```
 
-Example with scalar `pred`:
+标量 `pred` 示例：
 
 ```
 let pred: PRED = true;
@@ -1072,9 +1003,8 @@ let v2: s32[4] = {100, 200, 300, 400};
 Select(pred, v1, v2) = s32[4]{1, 2, 3, 4};
 ```
 
-Selections between tuples are supported. Tuples are considered to be scalar
-types for this purpose. If `on_true` and `on_false` are tuples (which must have
-the same shape!) then `pred` has to be a scalar of type `PRED`.
+XLA 还支持两个元组之间的选择，这时元组被视为标量。如果 `on_true` 和 `on_false` 是元组（必须是相同形状的），则 `pred` 必须是类型为 `PRED` 的标量。
+
 
 ## Slice
 
