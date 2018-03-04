@@ -1154,20 +1154,19 @@ DynamicUpdateSlice(b, u, s) produces:
 `permutation` | `ArraySlice<int64>`     | 指定维度重排列的方式
 
 
-将 operand 数组的维度重排列，所以
+Transpose 将 operand 数组的维度重排列，所以
 `∀ i . 0 ≤ i < rank ⇒ input_dimensions[permutation[i]] = output_dimensions[i]`。
 
 这等价于 Reshape(operand, permutation, Permute(permutation, operand.shape.dimensions))。
 
+
 ## Tuple
 
-See also
-[`ComputationBuilder::Tuple`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::Tuple`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
-A tuple containing a variable number of data handles, each of which has its own
-shape.
+一个元组（tuple）包含一些数据句柄，它们各自都有自己的形状。
 
-This is analogous to `std::tuple` in C++. Conceptually:
+概念上看，它类似于 C++ 中的 `std::tuple` in C++：
 
 ```
 let v: f32[10] = f32[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
@@ -1175,47 +1174,29 @@ let s: s32 = 5;
 let t: (f32[10], s32) = tuple(v, s);
 ```
 
-Tuples can be deconstructed (accessed) via the [`GetTupleElement`]
-(#gettupleelement) operation.
+元组可通过 [`GetTupleElement`](#gettupleelement) 操作来解析（访问）。
 
 ## While
 
-See also
-[`ComputationBuilder::While`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h).
+另请参阅 [`ComputationBuilder::While`](https://www.tensorflow.org/code/tensorflow/compiler/xla/client/computation_builder.h)。
 
 <b> `While(condition, body, init)` </b>
 
-| Arguments   | Type          | Semantics                                      |
+| 参数 | 类型 | 语义                                      |
 | ----------- | ------------- | ---------------------------------------------- |
-| `condition` | `Computation` | Computation of type `T -> PRED` which defines  |
-:             :               : the termination condition of the loop.         :
-| `body`      | `Computation` | Computation of type `T -> T` which defines the |
-:             :               : body of the loop.                              :
-| `init`      | `T`           | Initial value for the parameter of `condition` |
-:             :               : and `body`.                                    :
+| `condition` | `Computation` | 类型为 `T -> PRED` 的计算，它定义了循环终止的条件 |
+| `body`      | `Computation` | 类型为 `T -> T` 的计算，它定义了循环体 |
+| `init`      | `T`           | `condition` 和 `body` 的参数的初始值 |
 
-Sequentially executes the `body` until the `condition` fails. This is similar to
-a typical while loop in many other languages except for the differences and
-restrictions listed below.
+`While` 顺序执行循环体 `body` ，直到 `condition` 失败。这类似于很多语言中的 while 循环，不过，它有如下的区别和限制：
 
-*   A `While` node returns a value of type `T`, which is the result from the
-    last execution of the `body`.
-*   The shape of the type `T` is statically determined and must be the same
-    across all iterations.
-*   `While` nodes are not allowed to be nested. (This restriction may be lifted
-    in the future on some targets.)
+*   一个 `While` 结点有一个类型为 `T` 的返回值，它是最后一次执行 `body` 的结果。
+*   类型为 `T` 的形状是由统计确定的，在整个迭代过程中，它都是保持不变的。
+*   `While` 结点之间不允许嵌套。这个限制可能会在未来某些目标平台上取消。
 
-The T parameters of the computations are initialized with the `init` value in
-the first iteration and are automatically updated to the new result from `body`
-in each subsequent iteration.
+该计算的类型为 T 的那些参数使用 `init` 作为迭代的第一次计算的初值，并在接下来的迭代中由 `body` 来更新。
 
-One main use case of the `While` node is to implement the repeated execution of
-training in neural networks. Simplified pseudocode is shown below with a graph
-that represents the computation. The code can be found in
-[`while_test.cc`](https://www.tensorflow.org/code/tensorflow/compiler/xla/tests/while_test.cc).
-The type `T` in this example is a `Tuple` consisting of an `int32` for the
-iteration count and a `vector[10]` for the accumulator. For 1000 iterations, the
-loop keeps adding a constant vector to the accumulator.
+`While` 结点的一个主要使用安例是实现神经网络中的训练的重复执行。下面是一个简化版的伪代码，和一个表示计算过程的图。实际代码可以在 [`while_test.cc`](https://www.tensorflow.org/code/tensorflow/compiler/xla/tests/while_test.cc) 中找到。此例中的 `T` 类型为一个 `Tuple`，它包含一个 `int32` 值，表示迭代次数，还有一个 `vector[10]`，用于累加结果。它有 1000 次迭代，每一次都会将一个常数矢量累加到 result(1) 上。
 
 ```
 // Pseudocode for the computation.
@@ -1231,3 +1212,5 @@ while (result(0) < 1000) {
 <div style="width:95%; margin:auto; margin-bottom:10px; margin-top:20px;">
   <img style="width:100%" src="https://www.tensorflow.org/images/ops_while.png">
 </div>
+
+
