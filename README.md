@@ -2,6 +2,8 @@
   <img src="https://www.tensorflow.org/images/tf_logo_transp.png"><br><br>
 </div>
 
+# 本项目已转移至 👉 [TensorFlow Docs](https://github.com/xitu/tensorflow-docs)
+
 -----------------
 
 | **`Linux CPU`**                          | **`Linux GPU`**                          | **`Mac OS CPU`**                         | **`Windows CPU`**                        | **`Android`**                            |
